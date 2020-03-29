@@ -11,7 +11,10 @@ metadata =  "test_samples.tsv"
 
 samples = pd.read_csv(metadata, sep = "\t")['sample']
 
-inFolder = "/hpc/users/humphj04/pipelines/editing-pipeline/test/"
+inFolder = "input/"
+
+refDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/'
+dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 # create nested dictionary for storing reference files
 #genomePath = "/sc/hydra/projects/ad-omics/data/references/hg38_reference/hg38.fa"
@@ -22,7 +25,7 @@ inFolder = "/hpc/users/humphj04/pipelines/editing-pipeline/test/"
 
 rule all:
     input:
-        expand( "{sample}/{sample}.config.yaml", sample = samples),
+        expand( "{sample}/{sample}.config.json", sample = samples),
         expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples)
 
 rule writeConfig:
@@ -36,13 +39,13 @@ rule writeConfig:
         #bai = "{sample}/input/{sample}.bam.bai",
         #genome = refFolder + "hg38.fa",
         #snps = refFolder + "dbSNP.bed",
-        config = "{sample}.config.yaml"
+        config = "{sample}.config.json"
     run:
         #os.symlink(input.bam, output.bam)
         #os.symlink(input.bai, output.bai)
         #os.symlink(input.genome, output.genome)
         #os.symlink(input.snps, output.snps)
-        # create data structure and save as YAML
+        # create data structure and save as JSON
         config['input_bam']['path'] = input.bam
         #config['reference']['path'] = output.genome
         #config['known_snp']['path'] = output.snps
@@ -54,20 +57,18 @@ wildcard_constraints:
 
 rule SAILOR:
     input:
-        config = "{sample}.config.yaml",
-        genome = config['reference']['path'],
-        snps = config['known_snp']['path'],
+        config = "{sample}.config.json",
+        #genome = config['reference']['path'],
+        #snps = config['known_snp']['path'],
         bam = inFolder + "{sample}.bam",
         bai = inFolder + "{sample}.bam.bai"
     output:
-        "{sample}/{sample}.config.yaml",
+        "{sample}/{sample}.config.json",
         "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf"
-    params: 
-        config = "{sample}.config.yaml"
     shell:
         "ml singularity/3.5.2;"
         #"cd {wildcards.sample};"
-        "singularity run {sailor} {input.config}; "
+        "singularity run --bind {refDir} --bind {dbSNPDir} {sailor} {input.config} ; "
         "mkdir {wildcards.sample};"
         "mv {wildcards.sample}.* {wildcards.sample}/"
         #"--alpha 0 --beta 0 --ct --dp DP4 "

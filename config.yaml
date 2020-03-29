@@ -4,10 +4,10 @@ input_bam:
   path: example_inputs/example.bam
 known_snp:
   class: File
-  path: references/dbSNP_GCF_000001405.38.bed
+  path: /sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/hg38_common_snps.bed.gz
 reference:
   class: File
-  path: references/hg38.fa
+  path: /sc/hydra/projects/ad-omics/data/references/hg38_reference/hg38.fa
 ct: true
 min_variant_coverage: 5
 alpha: 0
