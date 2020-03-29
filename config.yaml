@@ -1,0 +1,17 @@
+input_bam:
+  class: File
+    # placeholder - will be replaced to create sample specific config
+  path: example_inputs/example.bam
+known_snp:
+  class: File
+  path: references/dbSNP_GCF_000001405.38.bed
+reference:
+  class: File
+  path: references/hg38.fa
+ct: true
+min_variant_coverage: 5
+alpha: 0
+beta: 0
+edit_fraction: 0.01
+skip_duplicate_removal: true
+reverse_stranded_library: true
