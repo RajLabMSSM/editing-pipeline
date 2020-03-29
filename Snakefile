@@ -69,7 +69,7 @@ rule SAILOR:
         "ml singularity/3.5.2;"
         #"cd {wildcards.sample};"
         "singularity run --bind {refDir} --bind {dbSNPDir} {sailor} {input.config} ; "
-        "mkdir {wildcards.sample};"
+        "mkdir -p {wildcards.sample};"
         "mv {wildcards.sample}.* {wildcards.sample}/"
         #"--alpha 0 --beta 0 --ct --dp DP4 "
         #"--edge_mutation 5 --edit_fraction 0.01 " 
