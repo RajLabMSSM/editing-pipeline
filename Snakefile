@@ -7,11 +7,12 @@ import os
 import yaml
 import json
 
-metadata =  "test_samples.tsv"
+metadata =  config["samples"]
 
 samples = pd.read_csv(metadata, sep = "\t")['sample']
+bams = pd.read_csv(metadata, sep = "\t")['bam']
 
-inFolder = "input/"
+#inFolder = config["inFolder"]
 
 refDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/'
 dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
@@ -53,7 +54,7 @@ rule writeConfig:
         json.dump(config, stream)
 
 wildcard_constraints:
-    sample = '[A-Za-z0-9_]+'
+    sample = '[A-Za-z0-9_-]+'
 
 rule SAILOR:
     input:
@@ -71,10 +72,3 @@ rule SAILOR:
         "singularity run --bind {refDir} --bind {dbSNPDir} {sailor} {input.config} ; "
         "mkdir -p {wildcards.sample};"
         "mv {wildcards.sample}.* {wildcards.sample}/"
-        #"--alpha 0 --beta 0 --ct --dp DP4 "
-        #"--edge_mutation 5 --edit_fraction 0.01 " 
-        #" --fwd_is_reverse --input_bam {input.bam} " 
-        #" --junction_overhang 10 --keep_all_edited --known_snp {input.snps} "
-        #" --min_variant_coverage 5 "
-        #" --non_ag 1 --reference {input.genome} --rev_is_reverse"
-        #" [--reverse_stranded_library] [--single_end] --skip_duplicate_removal "

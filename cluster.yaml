@@ -1,0 +1,13 @@
+__default__:
+  #partition: chimera
+  queue: express
+  cores: 1
+  mem: 3750
+  time: '120'
+  name: $(basename $(pwd)):{rule}:{wildcards}
+  output: logs/{rule}:{wildcards}.stdout
+  error: logs/{rule}:{wildcards}.stderr
+SAILOR:
+    cores: 8
+    mem: 3750
+    time: '600'

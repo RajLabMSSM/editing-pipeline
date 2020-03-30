@@ -1,3 +1,5 @@
+inFolder: input/
+samples: mg_samples.tsv
 input_bam:
   class: File
     # placeholder - will be replaced to create sample specific config
