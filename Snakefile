@@ -12,10 +12,11 @@ import os
 import yaml
 import json
 
-metadata =  config["samples"]
+metadata =  pd.read_csv(config["samples"], sep = "\t")
 
-samples = pd.read_csv(metadata, sep = "\t")['sample']
-#bams = pd.read_csv(metadata, sep = "\t")['bam']
+samples = metadata['sample']
+
+metadata_dict = metadata.set_index('sample').T.to_dict()
 
 inFolder = config["inFolder"]
 
@@ -36,26 +37,13 @@ rule all:
         expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples)
 
 rule writeConfig:
-    input:
-        #genome = genomePath,
-        #snps = knownSNPPath,
-        bam = inFolder + "{sample}.bam",
-        bai = inFolder + "{sample}.bam.bai"
     output:
-        #bam = "{sample}/input/{sample}.bam",
-        #bai = "{sample}/input/{sample}.bam.bai",
-        #genome = refFolder + "hg38.fa",
-        #snps = refFolder + "dbSNP.bed",
         config = "{sample}.config.json"
     run:
-        #os.symlink(input.bam, output.bam)
-        #os.symlink(input.bai, output.bai)
-        #os.symlink(input.genome, output.genome)
-        #os.symlink(input.snps, output.snps)
+        # subset metadata - get the corresponding BAM file
+        bam = metadata_dict[wildcards.sample]['bam']
         # create data structure and save as JSON
-        config['input_bam']['path'] = input.bam
-        #config['reference']['path'] = output.genome
-        #config['known_snp']['path'] = output.snps
+        config['input_bam']['path'] = bam
         stream = open(output.config, 'w')
         json.dump(config, stream)
 
@@ -66,16 +54,12 @@ wildcard_constraints:
 rule SAILOR:
     input:
         config = "{sample}.config.json",
-        #genome = config['reference']['path'],
-        #snps = config['known_snp']['path'],
-        bam = inFolder + "{sample}.bam",
-        bai = inFolder + "{sample}.bam.bai"
     output:
         "{sample}/{sample}.config.json",
         "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf"
-    shell:
-        "ml singularity/3.5.2;"
-        #"cd {wildcards.sample};"
-        "singularity run --bind {refDir} --bind {dbSNPDir} {sailor} {input.config} ; "
-        "mkdir -p {wildcards.sample};"
-        "mv {wildcards.sample}.* {wildcards.sample}/"
+    run:
+        bam = metadata_dict[wildcards.sample]['bam']
+        bamDir = os.path.dirname(bam)
+        shell("ml singularity/3.5.2; singularity run --bind {bamDir} --bind {refDir} --bind {dbSNPDir} {sailor} {input.config}")
+        shell("mkdir -p {wildcards.sample}")
+        shell("mv {wildcards.sample}.* {wildcards.sample}/")

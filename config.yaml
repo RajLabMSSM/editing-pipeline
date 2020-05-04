@@ -1,5 +1,9 @@
+# pipeline options
 inFolder: input/
-samples: mg_samples.tsv
+samples: samples.tsv
+
+
+# SAILOR options - don't change this
 input_bam:
   class: File
     # placeholder - will be replaced to create sample specific config
