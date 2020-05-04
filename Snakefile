@@ -1,3 +1,8 @@
+# RNA Editing Pipeline
+# Jack Humphrey, Raj Lab
+# 2020
+
+# wraps around the SAILOR pipeline, maintained by Brian Yee (https://github.com/YeoLab/sailor)
 
 sailor = "/sc/hydra/projects/ad-omics/data/software/sailor/sailor-1.2.0.img"
 
@@ -10,11 +15,12 @@ import json
 metadata =  config["samples"]
 
 samples = pd.read_csv(metadata, sep = "\t")['sample']
-bams = pd.read_csv(metadata, sep = "\t")['bam']
+#bams = pd.read_csv(metadata, sep = "\t")['bam']
 
-#inFolder = config["inFolder"]
+inFolder = config["inFolder"]
 
-refDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/'
+# hardcoded for now
+refDir = '/sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/'
 dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 # create nested dictionary for storing reference files
@@ -53,6 +59,7 @@ rule writeConfig:
         stream = open(output.config, 'w')
         json.dump(config, stream)
 
+# this may have to change depending on sample naming
 wildcard_constraints:
     sample = '[A-Za-z0-9_-]+'
 

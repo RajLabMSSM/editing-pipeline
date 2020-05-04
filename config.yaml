@@ -7,13 +7,14 @@ input_bam:
 known_snp:
   class: File
   path: /sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/hg38_common_snps.bed.gz
+# must have the same build as was used by RAPiD to make sure contigs match
 reference:
   class: File
-  path: /sc/hydra/projects/ad-omics/data/references/hg38_reference/hg38.fa
+  path: /sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/GRCh38.primary_assembly.genome.fa
 ct: true
 min_variant_coverage: 5
 alpha: 0
 beta: 0
 edit_fraction: 0.01
-skip_duplicate_removal: true
+skip_duplicate_removal: false
 reverse_stranded_library: true

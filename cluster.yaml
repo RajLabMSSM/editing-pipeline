@@ -1,6 +1,6 @@
 __default__:
   #partition: chimera
-  queue: express
+  queue: premium
   cores: 1
   mem: 3750
   time: '120'
@@ -8,6 +8,6 @@ __default__:
   output: logs/{rule}:{wildcards}.stdout
   error: logs/{rule}:{wildcards}.stderr
 SAILOR:
-    cores: 8
-    mem: 3750
-    time: '600'
+    cores: 16
+    mem: 3000
+    time: '1400'
