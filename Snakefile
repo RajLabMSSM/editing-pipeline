@@ -19,6 +19,7 @@ samples = metadata['sample']
 metadata_dict = metadata.set_index('sample').T.to_dict()
 
 inFolder = config["inFolder"]
+genes_bed = config["genes_bed"]
 
 # hardcoded for now
 refDir = '/sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/'
@@ -34,8 +35,8 @@ dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 rule all:
     input:
         expand( "{sample}/{sample}.config.json", sample = samples),
-        expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples)
-
+        expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples),
+        expand( "{sample}/{sample}.sites.bed", sample = samples)
 rule writeConfig:
     output:
         config = "{sample}.config.json"
@@ -63,3 +64,23 @@ rule SAILOR:
         shell("ml singularity/3.5.2; singularity run --bind {bamDir} --bind {refDir} --bind {dbSNPDir} {sailor} {input.config}")
         shell("mkdir -p {wildcards.sample}")
         shell("mv {wildcards.sample}.* {wildcards.sample}/")
+
+# take the FWD and REV sites and intersect with gene coordinates. 
+# concatenate and sort results
+# output: all filtered sites for a sample
+rule overlapGenes:
+    input:
+        fwd = "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.bed",
+        rev = "{sample}/{sample}.rev.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.bed"
+    params:
+        fwd_tmp = "{sample}/{sample}.fwd_tmp",
+        rev_tmp = "{sample}/{sample}.rev_tmp"
+    output:
+        "{sample}/{sample}.sites.bed"
+    shell:
+        "ml bedtools;"
+        "bedtools intersect -s -a {input.fwd} -b {genes_bed} > {params.fwd_tmp};"
+        "bedtools intersect -s -a {input.rev} -b {genes_bed} > {params.rev_tmp};"
+        "cat {params.fwd_tmp} {params.rev_tmp} | sort -k1,1 -k2,2n > {output} "
+
+

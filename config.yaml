@@ -1,7 +1,7 @@
 # pipeline options
 inFolder: input/
 samples: samples.tsv
-
+genes_bed: "/sc/hydra/projects/ad-omics/data/references/hg38_reference/GENCODE/gencode_hg38_v30/genes.bed"
 
 # SAILOR options - don't change this
 input_bam:
