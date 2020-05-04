@@ -1,6 +1,6 @@
 __default__:
   #partition: chimera
-  queue: premium
+  queue: express
   cores: 1
   mem: 3750
   time: '120'
@@ -10,4 +10,4 @@ __default__:
 SAILOR:
     cores: 16
     mem: 3000
-    time: '1400'
+    time: '719'
