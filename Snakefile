@@ -34,9 +34,10 @@ dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 rule all:
     input:
-        expand( "{sample}/{sample}.config.json", sample = samples),
+        #expand( "{sample}/{sample}.config.json", sample = samples),
         expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples),
-        expand( "{sample}/{sample}.sites.bed", sample = samples)
+        expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
+
 rule writeConfig:
     output:
         config = "{sample}.config.json"
@@ -56,7 +57,6 @@ rule SAILOR:
     input:
         config = "{sample}.config.json",
     output:
-        "{sample}/{sample}.config.json",
         "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf"
     run:
         bam = metadata_dict[wildcards.sample]['bam']
@@ -82,5 +82,18 @@ rule overlapGenes:
         "bedtools intersect -s -a {input.fwd} -b {genes_bed} > {params.fwd_tmp};"
         "bedtools intersect -s -a {input.rev} -b {genes_bed} > {params.rev_tmp};"
         "cat {params.fwd_tmp} {params.rev_tmp} | sort -k1,1 -k2,2n > {output} "
+
+
+# filtering didn't work in SAILOR so redo
+rule filterCommonSNPs:
+    input:    
+         "{sample}/{sample}.sites.bed"
+    output:
+         "{sample}/{sample}.sites.snp_filtered.bed"
+    params:
+        snp_db = config["known_snp"]["path"]
+    shell:
+        "ml bedtools;"
+        "bedtools intersect -v -a {input} -b {params.snp_db} > {output};"
 
 
