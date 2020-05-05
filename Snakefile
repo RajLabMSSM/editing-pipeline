@@ -96,4 +96,25 @@ rule filterCommonSNPs:
         "ml bedtools;"
         "bedtools intersect -v -a {input} -b {params.snp_db} > {output};"
 
+# merge sites together - filter out sites not found in majority of samples
+rule mergeSamples:
+    input:
+        expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
+    output:
+        dataCode + "merged_sites.RData",
+        dataCode + "merged_sites.vcf"
+    params:
+        script = "scripts/merge_samples.R",
+        missingness = 0.8
+    shell:
+        "ml R/3.6.0;"
+        "Rscript {params.script} --missingness {params.missingness} {dataCode} "
 
+
+# annotate VCF with gene and variant effect prediction
+rule annotateVCF:
+    input:
+    output:
+    shell:
+        "ml snpeff;"
+        "java -jar $SNPEFF_JAR ann GRCh38.86 {input} > {output}"
