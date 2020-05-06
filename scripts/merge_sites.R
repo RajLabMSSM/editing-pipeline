@@ -71,6 +71,8 @@ max_editing <- apply( editing_df, MAR = 1, FUN = function(x) max(x, na.rm=TRUE) 
 # ATTENTION - THESE VCFs are off by 1 - fix this
 createVCF <- function(df){
     index <- row.names(df)
+    mean_editing <- rowMeans(df, na.rm=TRUE)
+    max_editing <- apply( df, MAR = 1, FUN = function(x) max(x, na.rm=TRUE) )
     index_df <- as.data.frame(str_split_fixed(index, ":|-", 4))
     names(index_df) <- c("#CHROM", "START", "POS", "STRAND")
     index_df$ID <- index
@@ -78,8 +80,8 @@ createVCF <- function(df){
     index_df$ALT <- ifelse(index_df$STRAND == "+", "T", "A")
     # quality can be number of samples with non-missing entries
     index_df$QUAL <- rowSums( !is.na(df) )
-    index_df$FILTER <- "."
-    index_df$INFO <- index
+    index_df$FILTER <- mean_editing
+    index_df$INFO <- max_editing
     index_df$FORMAT <- "."
 
     index_df <- select(index_df, `#CHROM`, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT)
