@@ -2,6 +2,7 @@
 inFolder: input/
 samples: samples.tsv
 genes_bed: "/sc/hydra/projects/ad-omics/data/references/hg38_reference/GENCODE/gencode_hg38_v30/genes.bed"
+dataCode: "example"
 
 # SAILOR options - don't change this
 input_bam:
@@ -10,7 +11,7 @@ input_bam:
   path: example_inputs/example.bam
 known_snp:
   class: File
-  path: /sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/hg38_common_snps.bed.gz
+  path: /sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/hg38_common_snps.bed
 # must have the same build as was used by RAPiD to make sure contigs match
 reference:
   class: File
