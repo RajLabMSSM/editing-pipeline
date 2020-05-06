@@ -38,12 +38,11 @@ rule all:
     input:
         dataCode + "_merged_sites.annotated.vcf",
         #expand( "{sample}/{sample}.config.json", sample = samples),
-        expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples),
         expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
 
 rule writeConfig:
     output:
-        config = "{sample}.config.json"
+        config = "{sample}/{sample}.config.json"
     run:
         # subset metadata - get the corresponding BAM file
         bam = metadata_dict[wildcards.sample]['bam']
@@ -58,9 +57,10 @@ wildcard_constraints:
 
 rule SAILOR:
     input:
-        config = "{sample}.config.json",
+        config = "{sample}/{sample}.config.json",
     output:
-        "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf"
+        "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.bed",
+        "{sample}/{sample}.rev.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.bed"
     run:
         bam = metadata_dict[wildcards.sample]['bam']
         bamDir = os.path.dirname(bam)
