@@ -21,6 +21,8 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 inFolder = config["inFolder"]
 genes_bed = config["genes_bed"]
 
+dataCode = config['dataCode']
+
 # hardcoded for now
 refDir = '/sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/'
 dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
@@ -34,6 +36,7 @@ dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 rule all:
     input:
+        dataCode + "_merged_sites.annotated.vcf",
         #expand( "{sample}/{sample}.config.json", sample = samples),
         expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
 
@@ -96,4 +99,27 @@ rule filterCommonSNPs:
         "ml bedtools;"
         "bedtools intersect -v -a {input} -b {params.snp_db} > {output};"
 
+# merge sites together - filter out sites not found in majority of samples
+rule mergeSamples:
+    input:
+        expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
+    output:
+        dataCode + "_merged_sites.RData",
+        dataCode + "_merged_sites.vcf"
+    params:
+        script = "scripts/merge_sites.R",
+        missingness = 0.8
+    shell:
+        "ml R/3.6.0;"
+        "Rscript {params.script} --missingness {params.missingness} --dataCode {dataCode} "
 
+
+# annotate VCF with gene and variant effect prediction
+rule annotateVCF:
+    input:
+        dataCode + "_merged_sites.vcf"
+    output:
+        dataCode + "_merged_sites.annotated.vcf"
+    shell:
+        "ml snpeff;"
+        "java -jar $SNPEFF_JAR ann GRCh38.86 {input} > {output}"
