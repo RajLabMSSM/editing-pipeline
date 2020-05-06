@@ -34,7 +34,9 @@ sample_names <- gsub(".sites.snp_filtered.bed", "", basename(sites))
 info_df <- 
     purrr::map2( .x = all_sites, .y = sample_names, 
             ~{
-            df = mutate(.x, index = paste0(chr,":", start,"-",end,":",strand) ) %>% 
+            df <- .x %>%
+            dplyr::mutate(index = paste0(chr,":", start,"-",end,":",strand) ) %>% 
+            dplyr::mutate(info = paste0(info, "|", score) ) %>%
             dplyr::select(index, info)
         names(df)[2] <- .y
         df 
@@ -45,7 +47,7 @@ info_df <- column_to_rownames(info_df, var = "index")
 
 # create matrix of editing rates
 split_info <- function(info, i){
-    unlist(stringr::str_split_fixed(info, "\\|", 3)[,i])
+    unlist(stringr::str_split_fixed(info, "\\|", 4)[,i])
 }
 
 # select sites covered in X% of samples
@@ -58,6 +60,9 @@ clean_df <- info_df[ clean_sites,]
 # get out editing ratios
 editing_df <- apply(clean_df, MARGIN = c(1,2), FUN = function(x) {as.numeric(split_info(x, i = 3))})
 
+# get confidence scores for each site 
+confidence_df <-  apply(clean_df, MARGIN = c(1,2), FUN = function(x) {as.numeric(split_info(x, i = 4))})
+
 # calculate mean and max editing rates
 mean_editing <- rowMeans(editing_df, na.rm=TRUE)
 max_editing <- apply( editing_df, MAR = 1, FUN = function(x) max(x, na.rm=TRUE) )
@@ -68,7 +73,6 @@ max_editing <- apply( editing_df, MAR = 1, FUN = function(x) max(x, na.rm=TRUE) 
 # output a VCF for annotation
 # VCF columns: #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  MSMD0170-01
 
-# ATTENTION - THESE VCFs are off by 1 - fix this
 createVCF <- function(df){
     index <- row.names(df)
     mean_editing <- rowMeans(df, na.rm=TRUE)
@@ -90,7 +94,7 @@ createVCF <- function(df){
     return(vcf)
 }
 
-save(info_df, editing_df, file = outRData)
+save(info_df, editing_df, confidence_df, file = outRData)
 
 vcf <- createVCF(editing_df)
 
