@@ -98,4 +98,7 @@ save(info_df, editing_df, confidence_df, file = outRData)
 
 vcf <- createVCF(editing_df)
 
-write_tsv(vcf, path = outVCF) 
+# add in VCF header so IGV recognises it
+vcf_header <- "##fileformat=VCFv4.3"
+writeLines(vcf_header, con = outVCF)
+write_tsv(vcf, path = outVCF, append = TRUE, col_names = TRUE) 
