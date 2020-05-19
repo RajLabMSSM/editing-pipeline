@@ -16,6 +16,7 @@ filterCommonSNPs:
   mem: 3000
   time: '60'
 SAILOR:
-    cores: 16
+    queue: premium
+    cores: 4
     mem: 3000
-    time: '719'
+    time: '1440'

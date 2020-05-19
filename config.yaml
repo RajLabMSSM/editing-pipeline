@@ -1,8 +1,8 @@
 # pipeline options
 inFolder: input/
-samples: samples.tsv
+samples: "MyND_PBG-2022_missing_5.tsv"
 genes_bed: "/sc/hydra/projects/ad-omics/data/references/hg38_reference/GENCODE/gencode_hg38_v30/genes.bed"
-dataCode: "example"
+dataCode: "MyND_PBG-2022"
 
 # SAILOR options - don't change this
 input_bam:

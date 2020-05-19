@@ -125,6 +125,6 @@ rule annotateVCF:
         script = "/hpc/packages/minerva-centos7/snpeff/4.3t/snpEff/scripts/vcfEffOnePerLine.pl"
     shell:
         "ml snpeff;"
-        "java -jar $SNPEFF_JAR ann GRCh38.86 {input} > {output.vcf};"
+        "java -Xmx8g -jar $SNPEFF_JAR ann GRCh38.86 {input} > {output.vcf};"
         "cat {output.vcf} | {params.script} | "
         " java -jar $SNPSIFT_JAR extractFields - CHROM POS ID REF ALT \"ANN[*].GENE\" \"ANN[*].EFFECT\" > {output.txt} "
