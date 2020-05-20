@@ -41,7 +41,7 @@ info_df <-
         names(df)[2] <- .y
         df 
     } ) %>% 
-purrr::reduce( dplyr::left_join, by = "index" )
+purrr::reduce( dplyr::full_join, by = "index" )
 
 info_df <- column_to_rownames(info_df, var = "index")
 
@@ -50,8 +50,12 @@ split_info <- function(info, i){
     unlist(stringr::str_split_fixed(info, "\\|", 4)[,i])
 }
 
+# info_df is huge now - only retain sites found in at least 25% samples for saving
+sites_5 <- rowSums( !is.na(info_df) ) >= floor(0.25 * ncol(info_df) )
+info_df <- info_df[ sites_5,]
+
 # select sites covered in X% of samples
-#missingness <- 0.75
+#missingness <- 0.8
 
 clean_sites <- rowSums( !is.na(info_df) ) >= floor( missingness * ncol(info_df) )
 
