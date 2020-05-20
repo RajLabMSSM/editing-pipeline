@@ -4,6 +4,7 @@ library(optparse)
 
 
 option_list <- list(
+    make_option(c('--prefix'), help = 'prefix to add to search path, if required', default = ''),
     make_option(c('--dataCode'), help='', default = "example"),
         make_option(c('--missingness'), help='', default = 0.8)
 )
@@ -14,15 +15,21 @@ opt <- parse_args(option.parser)
 
 dataCode <- opt$dataCode
 missingness <- opt$missingness
-
+prefix <- opt$prefix
 outRData <- paste0(dataCode, "_merged_sites.RData")
 outVCF <- paste0(dataCode, "_merged_sites.vcf")
 
 # -o specifies output file
 # positional arguments for each input sites.bed file
 
-sites <- list.files(pattern = "sites.snp_filtered.bed", recursive = TRUE, full.names = TRUE)
+search_pattern <- paste0(prefix,".*sites.snp_filtered.bed")
 
+message( " * Using search pattern:", search_pattern)
+
+sites <- list.files(pattern = search_pattern, recursive = TRUE, full.names = TRUE)
+
+message( " * ", length(sites), " files detected")
+stopifnot(length(sites) > 0)
 all_sites <- purrr::map(sites, ~{
                 readr::read_tsv(.x, col_names = c("chr","start","end", "info", "score", "strand"), col_types = "cnncnc") %>%
                 dplyr::distinct() %>%
