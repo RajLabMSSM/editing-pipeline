@@ -22,6 +22,7 @@ inFolder = config["inFolder"]
 genes_bed = config["genes_bed"]
 
 dataCode = config['dataCode']
+prefix = config['prefix']
 
 # hardcoded for now
 refDir = '/sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/'
@@ -111,7 +112,7 @@ rule mergeSamples:
         missingness = 0.8
     shell:
         "ml R/3.6.0;"
-        "Rscript {params.script} --missingness {params.missingness} --dataCode {dataCode} "
+        "Rscript {params.script} --prefix {prefix} --missingness {params.missingness} --dataCode {dataCode} "
 
 
 # annotate VCF with gene and variant effect prediction
