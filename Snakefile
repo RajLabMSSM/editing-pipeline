@@ -22,7 +22,7 @@ inFolder = config["inFolder"]
 genes_bed = config["genes_bed"]
 
 dataCode = config['dataCode']
-prefix = config['prefix']
+groups = config['groups']
 
 # hardcoded for now
 refDir = '/sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/'
@@ -37,7 +37,7 @@ dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 rule all:
     input:
-        dataCode + "_merged_sites.annotated.vcf",
+        expand(dataCode + "_{group}_merged_sites.annotated.vcf", group = groups),
         #expand( "{sample}/{sample}.config.json", sample = samples),
         expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
 
@@ -105,23 +105,23 @@ rule mergeSamples:
     input:
         expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
     output:
-        dataCode + "_merged_sites.RData",
-        dataCode + "_merged_sites.vcf"
+        dataCode + "_{group}_merged_sites.RData",
+        dataCode + "_{group}_merged_sites.vcf"
     params:
         script = "scripts/merge_sites.R",
         missingness = 0.8
     shell:
         "ml R/3.6.0;"
-        "Rscript {params.script} --prefix {prefix} --missingness {params.missingness} --dataCode {dataCode} "
+        "Rscript {params.script} --prefix {wildcards.group} --missingness {params.missingness} --dataCode {dataCode}_{wildcards.group} "
 
 
 # annotate VCF with gene and variant effect prediction
 rule annotateVCF:
     input:
-        dataCode + "_merged_sites.vcf"
+        dataCode + "_{group}_merged_sites.vcf"
     output:
-        vcf = dataCode + "_merged_sites.annotated.vcf",
-        txt = dataCode + "_merged_sites.annotated.txt"
+        vcf = dataCode + "_{group}_merged_sites.annotated.vcf",
+        txt = dataCode + "_{group}_merged_sites.annotated.txt"
     params:
         script = "/hpc/packages/minerva-centos7/snpeff/4.3t/snpEff/scripts/vcfEffOnePerLine.pl"
     shell:

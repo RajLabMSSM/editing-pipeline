@@ -22,6 +22,9 @@ outVCF <- paste0(dataCode, "_merged_sites.vcf")
 # -o specifies output file
 # positional arguments for each input sites.bed file
 
+# if prefix variable == "all" then use all files for merging
+if( prefix == "all"){ prefix <- "" }
+
 search_pattern <- paste0(prefix,".*sites.snp_filtered.bed")
 
 message( " * Using search pattern:", search_pattern)
