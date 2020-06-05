@@ -37,7 +37,7 @@ dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 rule all:
     input:
-        expand(dataCode + "_{group}_merged_sites.annotated.vcf", group = groups),
+        expand(dataCode + "_{group}_merged_sites.annotated.filtered.txt", group = groups),
         #expand( "{sample}/{sample}.config.json", sample = samples),
         expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
 
@@ -128,4 +128,20 @@ rule annotateVCF:
         "ml snpeff;"
         "java -Xmx8g -jar $SNPEFF_JAR ann GRCh38.86 {input} > {output.vcf};"
         "cat {output.vcf} | {params.script} | "
-        " java -jar $SNPSIFT_JAR extractFields - CHROM POS ID REF ALT \"ANN[*].GENE\" \"ANN[*].EFFECT\" > {output.txt} "
+        " java -jar $SNPSIFT_JAR extractFields - CHROM POS ID REF ALT \"ANN[*].GENE\"  \"ANN[*].GENEID\" \"ANN[*].EFFECT\"   \"ANN[*].FEATURE\"  \"ANN[*].FEATUREID\"  \"ANN[*].BIOTYPE\" \"ANN[*].DISTANCE\" > {output.txt} "
+
+# filter annotation
+# match strand to transcripts
+# remove any annotation where transcript is not on same strand as mutation
+rule filterAnnotation:
+    input:
+        txt = dataCode + "_{group}_merged_sites.annotated.txt"
+    output:
+        txt = dataCode + "_{group}_merged_sites.annotated.filtered.txt"
+    params:
+        script = "scripts/filter_annotation.R"
+    shell:
+        "ml R/3.6.0;"
+        "Rscript {params.script} --input {input.txt} --output {output.txt} "
+
+

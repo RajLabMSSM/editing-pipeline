@@ -7,6 +7,10 @@ __default__:
   name: $(basename $(pwd)):{rule}:{wildcards}
   output: logs/{rule}:{wildcards}.stdout
   error: logs/{rule}:{wildcards}.stderr
+mergeSamples:
+    cores: 16
+    mem: 3000
+    time: 120
 annotateVCF:
   cores: 8
   mem: 3000
@@ -17,6 +21,6 @@ filterCommonSNPs:
   time: '60'
 SAILOR:
     queue: premium
-    cores: 16
+    cores: 24
     mem: 3000
     time: '1440'

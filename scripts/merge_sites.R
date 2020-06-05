@@ -34,6 +34,7 @@ sites <- list.files(pattern = search_pattern, recursive = TRUE, full.names = TRU
 message( " * ", length(sites), " files detected")
 stopifnot(length(sites) > 0)
 all_sites <- purrr::map(sites, ~{
+                message(" * reading in ",.x)
                 readr::read_tsv(.x, col_names = c("chr","start","end", "info", "score", "strand"), col_types = "cnncnc") %>%
                 dplyr::distinct() %>%
                 as.data.frame()  
@@ -44,42 +45,59 @@ sample_names <- gsub(".sites.snp_filtered.bed", "", basename(sites))
 info_df <- 
     purrr::map2( .x = all_sites, .y = sample_names, 
             ~{
+            message(" * processing ", .y) 
             df <- .x %>%
             dplyr::mutate(index = paste0(chr,":", start,"-",end,":",strand) ) %>% 
             dplyr::mutate(info = paste0(info, "|", score) ) %>%
             dplyr::select(index, info)
         names(df)[2] <- .y
         df 
-    } ) %>% 
-purrr::reduce( dplyr::full_join, by = "index" )
+    } )
 
-info_df <- column_to_rownames(info_df, var = "index")
+rm(all_sites)
 
-# create matrix of editing rates
-split_info <- function(info, i){
-    unlist(stringr::str_split_fixed(info, "\\|", 4)[,i])
-}
+# with lots of samples, full joining each is impossible
+# work in batches instead?
+
+# get all indexes out and create unique list
+# for each sample leftjoin with the index list
+all_index <- unique(unlist(map(info_df, "index")))
+index_df <- data.frame(index = all_index, stringsAsFactors=FALSE)
+
+# join each sample to the master list
+all_index <- map( info_df, ~{ 
+    message(" * joining ", colnames(.x)[2] )
+    left_join(index_df, .x, by = "index") %>% 
+    column_to_rownames(var = "index") 
+})
+
+# bind together
+info_df <- do.call( cbind, all_index)
+
 
 # info_df is huge now - only retain sites found in at least 25% samples for saving
 sites_5 <- rowSums( !is.na(info_df) ) >= floor(0.25 * ncol(info_df) )
 info_df <- info_df[ sites_5,]
 
 # select sites covered in X% of samples
-#missingness <- 0.8
+#missingness <- 0.5
 
 clean_sites <- rowSums( !is.na(info_df) ) >= floor( missingness * ncol(info_df) )
 
 clean_df <- info_df[ clean_sites,]
+
+
+# create matrix of editing rates
+split_info <- function(info, i){
+    unlist(stringr::str_split_fixed(info, "\\|", 4)[,i])
+}
+
 
 # get out editing ratios
 editing_df <- apply(clean_df, MARGIN = c(1,2), FUN = function(x) {as.numeric(split_info(x, i = 3))})
 
 # get confidence scores for each site 
 confidence_df <-  apply(clean_df, MARGIN = c(1,2), FUN = function(x) {as.numeric(split_info(x, i = 4))})
-
-# calculate mean and max editing rates
-mean_editing <- rowMeans(editing_df, na.rm=TRUE)
-max_editing <- apply( editing_df, MAR = 1, FUN = function(x) max(x, na.rm=TRUE) )
 
 # hypothesis - C>T editing in homeostatic immune cells is going to be low ~ 5-10% at best
 #editing_df[ max_editing > 0.01 &  mean_editing < 0.25,]
