@@ -84,3 +84,11 @@ rule overlapGenes:
         "cat {params.fwd_tmp} {params.rev_tmp} | sort -k1,1 -k2,2n > {output} "
 
 
+rule mergeSites:
+    input:
+        expand( "{sample}/{sample}.sites.bed", sample = samples)
+    output:
+        dataCode + ".all_sites.RData"
+    shell:
+        "ml R/3.6.0;"
+        "Rscript scripts/merge_sites.R -o {output} {input}"
