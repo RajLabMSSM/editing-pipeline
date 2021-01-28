@@ -21,6 +21,9 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 inFolder = config["inFolder"]
 genes_bed = config["genes_bed"]
 
+dataCode = config['dataCode']
+groups = config['groups']
+
 # hardcoded for now
 refDir = '/sc/hydra/projects/PBG/REFERENCES/GRCh38/FASTA/'
 dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
@@ -34,12 +37,13 @@ dbSNPDir = '/sc/hydra/projects/ad-omics/data/references/hg38_reference/dbSNP/'
 
 rule all:
     input:
-        expand( "{sample}/{sample}.config.json", sample = samples),
-        expand( "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf", sample = samples),
-        expand( "{sample}/{sample}.sites.bed", sample = samples)
+        expand(dataCode + "_{group}_merged_sites.annotated.filtered.txt", group = groups),
+        #expand( "{sample}/{sample}.config.json", sample = samples),
+        expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
+
 rule writeConfig:
     output:
-        config = "{sample}.config.json"
+        config = "{sample}/{sample}.config.json"
     run:
         # subset metadata - get the corresponding BAM file
         bam = metadata_dict[wildcards.sample]['bam']
@@ -54,10 +58,10 @@ wildcard_constraints:
 
 rule SAILOR:
     input:
-        config = "{sample}.config.json",
+        config = "{sample}/{sample}.config.json",
     output:
-        "{sample}/{sample}.config.json",
-        "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.conf"
+        "{sample}/{sample}.fwd.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.bed",
+        "{sample}/{sample}.rev.sorted.rmdup.readfiltered.formatted.varfiltered.snpfiltered.ranked.bed"
     run:
         bam = metadata_dict[wildcards.sample]['bam']
         bamDir = os.path.dirname(bam)
@@ -92,3 +96,60 @@ rule mergeSites:
     shell:
         "ml R/3.6.0;"
         "Rscript scripts/merge_sites.R -o {output} {input}"
+# filtering didn't work in SAILOR so redo
+rule filterCommonSNPs:
+    input:    
+         "{sample}/{sample}.sites.bed"
+    output:
+         "{sample}/{sample}.sites.snp_filtered.bed"
+    params:
+        snp_db = config["known_snp"]["path"]
+    shell:
+        "ml bedtools;"
+        "bedtools intersect -v -a {input} -b {params.snp_db} > {output};"
+
+# merge sites together - filter out sites not found in majority of samples
+rule mergeSamples:
+    input:
+        expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
+    output:
+        dataCode + "_{group}_merged_sites.RData",
+        dataCode + "_{group}_merged_sites.vcf"
+    params:
+        script = "scripts/merge_sites.R",
+        missingness = 0.8
+    shell:
+        "ml R/3.6.0;"
+        "Rscript {params.script} --prefix {wildcards.group} --missingness {params.missingness} --dataCode {dataCode}_{wildcards.group} "
+
+
+# annotate VCF with gene and variant effect prediction
+rule annotateVCF:
+    input:
+        dataCode + "_{group}_merged_sites.vcf"
+    output:
+        vcf = dataCode + "_{group}_merged_sites.annotated.vcf",
+        txt = dataCode + "_{group}_merged_sites.annotated.txt"
+    params:
+        script = "/hpc/packages/minerva-centos7/snpeff/4.3t/snpEff/scripts/vcfEffOnePerLine.pl"
+    shell:
+        "ml snpeff;"
+        "java -Xmx8g -jar $SNPEFF_JAR ann GRCh38.86 {input} > {output.vcf};"
+        "cat {output.vcf} | {params.script} | "
+        " java -jar $SNPSIFT_JAR extractFields - CHROM POS ID REF ALT \"ANN[*].GENE\"  \"ANN[*].GENEID\" \"ANN[*].EFFECT\"   \"ANN[*].FEATURE\"  \"ANN[*].FEATUREID\"  \"ANN[*].BIOTYPE\" \"ANN[*].DISTANCE\" > {output.txt} "
+
+# filter annotation
+# match strand to transcripts
+# remove any annotation where transcript is not on same strand as mutation
+rule filterAnnotation:
+    input:
+        txt = dataCode + "_{group}_merged_sites.annotated.txt"
+    output:
+        txt = dataCode + "_{group}_merged_sites.annotated.filtered.txt"
+    params:
+        script = "scripts/filter_annotation.R"
+    shell:
+        "ml R/3.6.0;"
+        "Rscript {params.script} --input {input.txt} --output {output.txt} "
+
+
