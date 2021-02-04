@@ -11,7 +11,8 @@
 #BSUB -R span[hosts=1]
 #BSUB -M 20GB
 
-
+# references stored here:
+/sc/arion/projects/breen_lab/AEI
 module load rnaeditingindexer
 
 . ./variables
