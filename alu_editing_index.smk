@@ -1,7 +1,7 @@
 # Part of RNA Editing Pipeline
 # Jack Humphrey, Raj Lab
 # 2021
-
+refDir: "/sc/arion/projects/breen_lab/AEI/"
 
 
 import pandas as pd
@@ -27,7 +27,6 @@ import os
 #config = {'input_bam': {'class': 'File', 'path': 'NA'}, 'reference': {'class': 'File', 'path': genomePath}, 'known_snp': {'class': 'File', 'path': knownSNPPath} }
 
 outDir = config["outDir"]
-refDir = config["refDir"]
 
 metadata =  pd.read_csv(config["metadata"], sep = "\t")
 
@@ -35,8 +34,8 @@ SAMPLES = metadata["sample"]
 BAMS = metadata["bam_path"] + metadata["sample"] + ".bam"
 metadata_dict = metadata.set_index('sample').T.to_dict()
 
-paired = metadata["paired"]
-stranded = metadata["stranded"]
+paired = config["paired"]
+stranded = config["stranded"]
 
 rule all:
     input:
@@ -63,6 +62,16 @@ rule AEI:
     run:
         bam_dir = metadata_dict[wildcards.SAMPLE]["bam_path"]
         
+        if stranded == True:
+            strand_cmd = " --stranded"
+        else:
+            strand_cmd = ""  
+
+        if paired == True: 
+            paired_cmd = " --paired"
+        else:
+            paired_cmd = ""
+      
         shell( "mkdir -p {params.out_dir}; \
                 cd {params.out_dir}; \
                 ml rnaeditingindexer; \
@@ -72,16 +81,15 @@ rule AEI:
                 -d {bam_dir} \
                 -f {params.bam_suffix} \
                 -o {params.out_dir} \
-                --log_path $PWD/{outDir} \
+                --log_path {params.out_dir} \
                 --genes_expression {params.genes_expression} \
                 --refseq {params.refseq} \
                 --snps {params.snps} \
                 -gf {params.gf} \
                 -rb {params.rb} \
                 --genome UserProvided \
-                --paired_end \
-                --stranded \
-                --verbose "
+                {paired_cmd} \
+                {strand_cmd} "
         )
 
 # this may have to change depending on sample naming
