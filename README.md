@@ -1,9 +1,8 @@
 # editing-pipeline
 
-a C to T RNA editing pipeline. Makes use of the Yeo lab [SAILOR](https://github.com/yeolab/sailor) pipeline which they've exported as a singularity image. This pipeline just wraps that image inside snakemake so we can apply it on large datasets and summarise the results. 
+Snakemake pipelines for detecting RNA-editing from RNA-seq data.
 
-The C to T version of SAILOR has been given to the Raj lab by Brian Yee. Thanks Brian!
-
+A collaboration between the Raj lab and the Breen lab.
 
 ## Dependencies
 
@@ -24,6 +23,24 @@ This is here:
 
 /sc/hydra/projects/ad-omics/data/references//hg38_reference/hg38.fa
 
-Unfortunately the singularity image can't deal with symlinks so you have to copy these files to references/
+
+## Pipelines included
+
+### AluEditing Index 
+
+Measures global editing rates of Alu elements at all the possible editing types.
+
+Has specific dependencies - to be covered.
+
+### REDItools + Annovar + SNPeff + ... (under construction)
+
+Measures de novo editing genome-wide, applies some basic filters, annotates with gene and transcript consequences
+
+### SAILOR pipeline (not being further developed)
+
+This is a specific C to T RNA editing pipeline. Makes use of the Yeo lab [SAILOR](https://github.com/yeolab/sailor) pipeline which they've exported as a singularity image. This pipeline just wraps that image inside snakemake so we can apply it on large datasets and summarise the results. 
+
+The C to T version of SAILOR has been given to the Raj lab by Brian Yee.
+
 
 
