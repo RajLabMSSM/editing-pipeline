@@ -1,8 +1,8 @@
 # Part of RNA Editing Pipeline
 # Jack Humphrey, Raj Lab
 # 2021
-refDir: "/sc/arion/projects/breen_lab/AEI/"
-
+#refDir = "/sc/arion/projects/breen_lab/AEI/"
+refDir = "/sc/arion/projects/ad-omics/data/software/RNAEditingIndexer/Resources"
 
 import pandas as pd
 import os
@@ -39,29 +39,47 @@ stranded = config["stranded"]
 
 rule all:
     input:
-        expand( outDir + "{SAMPLE}/EditingIndex.csv", SAMPLE = SAMPLES)
+        expand( outDir + "/{SAMPLE}/EditingIndex.csv", SAMPLE = SAMPLES),
+        expand( outDir + "/{SAMPLE}/{SAMPLE}.chr1.bam", SAMPLE = SAMPLES)
         #expand(dataCode + "_{group}_merged_sites.annotated.filtered.txt", group = groups),
         #expand( "{sample}/{sample}.config.json", sample = samples),
         #expand( "{sample}/{sample}.sites.snp_filtered.bed", sample = samples)
 
+rule get_chr:
+    output:
+        chr1_bam = outDir + "/{SAMPLE}/{SAMPLE}.chr1.bam"
+    params:
+        out_dir = outDir + "/{SAMPLE}/"
+    run:
+        bam_dir = metadata_dict[wildcards.SAMPLE]["bam_path"]
+        full_bam = bam_dir + "/" + wildcards.SAMPLE + ".bam"
+        chr1_bam = params.out_dir + "/" + wildcards.SAMPLE + ".chr1.bam"
+        shell( "mkdir -p {params.out_dir}; \
+                ml samtools/1.9; \
+                samtools view -bh {full_bam} chr1 > {chr1_bam}; \
+                samtools index {chr1_bam}" )
+
 
 rule AEI:
     input:
-        #metadata_dict["{SAMPLE}"]["bam_path"] + "/{SAMPLE}.bam"
-    output:
-        outDir + "{SAMPLE}/EditingIndex.csv"
-    params:
-        #bam_dir = metadata_dict["{SAMPLE}"]["bam_path"],
-        bam_suffix = ".bam",
-        out_dir = outDir + "/{SAMPLE}",
+        chr1_bam = outDir + "/{SAMPLE}/{SAMPLE}.chr1.bam",
         genes_expression = refDir + "/GenesExpression/HomoSapiens/ucscHg38GTExGeneExpression.bed.gz",
         refseq = refDir + "/RefSeqAnnotations/HomoSapiens/ucscHg38RefSeqCurated.bed.gz",
         snps = refDir + "/SNPs/HomoSapiens/ucscHg38CommonGenomicSNPs150.bed.gz",
         gf = refDir + "/Genomes/HomoSapiens/ucscHg38Genome.fa",
         rb = refDir + "/Regions/HomoSapiens/ucscHg38Alu.bed.gz"
+        #metadata_dict["{SAMPLE}"]["bam_path"] + "/{SAMPLE}.bam"
+    output:
+        index = outDir + "/{SAMPLE}/EditingIndex.csv"
+    params:
+        #bam_dir = metadata_dict["{SAMPLE}"]["bam_path"],
+        bam_suffix = ".chr1.bam",
+        out_dir = outDir + "/{SAMPLE}/"
     run:
         bam_dir = metadata_dict[wildcards.SAMPLE]["bam_path"]
-        
+        full_bam = bam_dir + "/" + wildcards.SAMPLE + ".bam"
+        chr1_bam = params.out_dir + "/" + wildcards.SAMPLE + ".chr1.bam"
+        chr1_bam_path = os.path.abspath(outDir) + "/" + wildcards.SAMPLE + "/"
         if stranded == True:
             strand_cmd = " --stranded"
         else:
@@ -72,21 +90,21 @@ rule AEI:
         else:
             paired_cmd = ""
       
-        shell( "mkdir -p {params.out_dir}; \
-                cd {params.out_dir}; \
+        shell( "mkdir -p {params.out_dir}/{wildcards.SAMPLE}/; \
                 ml rnaeditingindexer; \
                 ml samtools/1.9; \
-                rm -rf {params.out_dir}/flags; \
+                rm -rf {params.out_dir}/flags;\
+                cd {params.out_dir}; \
                 RNAEditingIndex \
-                -d {bam_dir} \
+                -d {chr1_bam_path}  \
                 -f {params.bam_suffix} \
-                -o {params.out_dir} \
-                --log_path {params.out_dir} \
-                --genes_expression {params.genes_expression} \
-                --refseq {params.refseq} \
-                --snps {params.snps} \
-                -gf {params.gf} \
-                -rb {params.rb} \
+                -o {chr1_bam_path} \
+                --log_path . \
+                --genes_expression {input.genes_expression} \
+                --refseq {input.refseq} \
+                --snps {input.snps} \
+                -gf {input.gf} \
+                -rb {input.rb} \
                 --genome UserProvided \
                 {paired_cmd} \
                 {strand_cmd} "
