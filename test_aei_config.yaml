@@ -1,6 +1,8 @@
+## Alu Editing Index pipeline
 outDir: "results/AEI" #"/sc/arion/projects/ad-omics/jack/editing/mynd-stim/AEI/"
-# hard coed
-refDir: "/sc/arion/projects/breen_lab/AEI/"
+# hard coded
+refDir: "/sc/arion/projects/ad-omics/data/software/RNAEditingIndexer/Resources/"
+#refDir: "/sc/arion/projects/breen_lab/AEI/"
 
 metadata: "test_samples.tsv"
 
