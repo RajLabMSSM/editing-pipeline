@@ -1,0 +1,21 @@
+# reference data 
+reditools: "/hpc/packages/minerva-centos7/reditools/2.0/reditools2.0"
+#KNOWN_SNPS_BED: "/sc/arion/projects/breen_lab/AEI/SNPs/HomoSapiens/ucscHg38CommonGenomicSNPs150.bed.gz"
+
+threads: 8 
+STRAND: 0
+CHANGE_DP: 1 #3  #minimum number of supporting reads
+LOCUS_DP: 2 #5 #minimum depth at a locus - in paper they use 10. not sure what to do
+
+# form in the pipe
+# reditools = config["reditools"]
+
+# INPUT and OUTPUT folder 
+INFOLDER: "/sc/arion/projects/ad-omics/flora/cohorts/Efthymiou_stim/debug/test/"
+OUTFOLDER: "/sc/arion/projects/ad-omics/flora/cohorts/Efthymiou_stim/debug/test/new_output/"
+
+# needs separate samples.tsv
+SAMPLES: ["new_test"]
+# multiple samples
+# metadata: "efthymiou_samples.tsv"
+#
