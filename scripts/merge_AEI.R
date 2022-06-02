@@ -11,9 +11,6 @@ option_list <- list(
 option.parser <- OptionParser(option_list=option_list)
 opt <- parse_args(option.parser)
 
-option.parser <- OptionParser(option_list=option_list)
-opt <- parse_args(option.parser)
-
 inFolder <- opt$inFolder
 
 all_files <- list.files(inFolder, pattern = "EditingIndex.csv", recursive = TRUE, full.names = TRUE)
