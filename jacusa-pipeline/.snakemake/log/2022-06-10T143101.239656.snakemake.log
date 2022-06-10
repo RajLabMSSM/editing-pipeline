@@ -1,0 +1,6 @@
+Building DAG of jobs...
+MissingInputException in line 19 of /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/jacusa-pipeline.smk:
+Missing input files for rule all:
+/sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/ESannotations.txt
+/sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/filtCoverageMatrix.txt
+/sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/filtRatioMatrix.txt

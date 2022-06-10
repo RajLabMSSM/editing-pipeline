@@ -1,4 +1,4 @@
-metadata : "test_samples.tsv"
+metadata : "test_samples.txt"
 projectDir: "/sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/"
 refDir : "/sc/arion/projects/ad-omics/data/references/GRCh38_references/"
 editingRefDir : "/sc/arion/projects/ad-omics/data/references/editing/"

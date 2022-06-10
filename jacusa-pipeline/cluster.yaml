@@ -7,32 +7,3 @@ __default__:
   output: logs/{rule}:{wildcards}.stdout
   error: logs/{rule}:{wildcards}.stderr
   himem: ""
-jacusa:
-    cores:
-    mem: 
-    time: 
-firstFiltering:
-    queue: 
-    cores:
-    mem:
-    time:
-mergeSecondFiltering:
-    queue:
-    cores:
-    mem:
-    time:
-annovar:
-    queue:
-    cores:
-    mem:
-    time:
-dropSNPs:
-    queue:
-    cores:
-    mem:
-    time:
-annovarFiltering:
-    queue:
-    cores:
-    mem:
-    time:
