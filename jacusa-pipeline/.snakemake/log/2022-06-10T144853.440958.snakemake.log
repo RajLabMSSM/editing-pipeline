@@ -1,0 +1,49 @@
+Job stats:
+job                     count    min threads    max threads
+--------------------  -------  -------------  -------------
+all                         1              1              1
+annovar                     1              1              1
+annovarFiltering            1              1              1
+dropSNPs                    1              1              1
+firstFiltering              2              1              1
+jacusa                      2              1              1
+mergeSecondFiltering        1              1              1
+total                       9              1              1
+
+[Fri Jun 10 14:49:16 2022]
+Error in rule jacusa:
+    jobid: 6
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.out
+
+Error executing rule jacusa on cluster (jobid: 6, external: 229474, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.3lkocpjr/snakejob.jacusa.6.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Fri Jun 10 14:49:16 2022]
+Error in rule jacusa:
+    jobid: 8
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.out
+
+Error executing rule jacusa on cluster (jobid: 8, external: 229476, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.3lkocpjr/snakejob.jacusa.8.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Fri Jun 10 14:49:36 2022]
+Error in rule jacusa:
+    jobid: 6
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.out
+
+Error executing rule jacusa on cluster (jobid: 6, external: 229535, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.3lkocpjr/snakejob.jacusa.6.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Fri Jun 10 14:49:36 2022]
+Error in rule jacusa:
+    jobid: 8
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.out
+
+Error executing rule jacusa on cluster (jobid: 8, external: 229537, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.3lkocpjr/snakejob.jacusa.8.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Fri Jun 10 14:49:46 2022]
+Error in rule jacusa:
+    jobid: 6
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.out
+
+Error executing rule jacusa on cluster (jobid: 6, external: 229569, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.3lkocpjr/snakejob.jacusa.6.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Fri Jun 10 14:49:46 2022]
+Error in rule jacusa:
+    jobid: 8
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.out
+
+Error executing rule jacusa on cluster (jobid: 8, external: 229571, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.3lkocpjr/snakejob.jacusa.8.sh). For error details see the cluster log and the log files of the involved rule(s).
+Exiting because a job execution failed. Look above for error message

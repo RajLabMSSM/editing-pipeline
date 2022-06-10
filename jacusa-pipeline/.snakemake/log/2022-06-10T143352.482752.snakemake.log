@@ -1,0 +1,73 @@
+Building DAG of jobs...
+Job stats:
+job                     count    min threads    max threads
+--------------------  -------  -------------  -------------
+all                         1              1              1
+annovar                     1              1              1
+annovarFiltering            1              1              1
+dropSNPs                    1              1              1
+firstFiltering              2              1              1
+jacusa                      2              1              1
+mergeSecondFiltering        1              1              1
+total                       9              1              1
+
+
+[Fri Jun 10 14:33:53 2022]
+rule jacusa:
+    input: /sc/arion/projects/ad-omics/data/references/editing/hg38-blacklist.v2_sort.bed, /sc/arion/projects/ad-omics/data/references/GRCh38_references/GRCh38.primary_assembly.genome.fa
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.out
+    jobid: 6
+    wildcards: sample=CASE-NEUAA599TMX-5310-T_P10
+    resources: tmpdir=/tmp
+
+[Fri Jun 10 14:33:53 2022]
+rule jacusa:
+    input: /sc/arion/projects/ad-omics/data/references/editing/hg38-blacklist.v2_sort.bed, /sc/arion/projects/ad-omics/data/references/GRCh38_references/GRCh38.primary_assembly.genome.fa
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.out
+    jobid: 8
+    wildcards: sample=CASE-NEUAB000NKC-5726-T_P68
+    resources: tmpdir=/tmp
+
+[Fri Jun 10 14:33:53 2022]
+rule firstFiltering:
+    input: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.out
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.filt
+    jobid: 5
+    wildcards: sample=CASE-NEUAA599TMX-5310-T_P10
+    resources: tmpdir=/tmp
+
+
+[Fri Jun 10 14:33:53 2022]
+rule firstFiltering:
+    input: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.out
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.filt
+    jobid: 7
+    wildcards: sample=CASE-NEUAB000NKC-5726-T_P68
+    resources: tmpdir=/tmp
+
+
+[Fri Jun 10 14:33:53 2022]
+rule mergeSecondFiltering:
+    input: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAA599TMX-5310-T_P10.filt, /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/CASE-NEUAB000NKC-5726-T_P68.filt
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/coverageMatrix.txt, /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/ratioMatrix.txt, /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/avinput.txt
+    jobid: 4
+    resources: tmpdir=/tmp
+
+
+[Fri Jun 10 14:33:53 2022]
+rule annovar:
+    input: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/avinput.txt
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/myanno.hg38_multianno.txt
+    jobid: 3
+    resources: tmpdir=/tmp
+
+
+[Fri Jun 10 14:33:53 2022]
+rule dropSNPs:
+    input: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/myanno.hg38_multianno.txt
+    output: /sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/myanno.hg38_multianno.txt.noCommon.txt
+    jobid: 2
+    resources: tmpdir=/tmp
+
+RuleException in line 163 of /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/jacusa-pipeline.smk:
+NameError: The name "OFS=FS='\t'" is unknown in this context. Please make sure that you defined that variable. Also note that braces not used for variable access have to be escaped by repeating them, i.e. {{print $1}}
