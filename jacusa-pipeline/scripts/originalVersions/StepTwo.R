@@ -2,6 +2,24 @@ library(splitstackshape)
 library(dplyr)
 library(tidyverse)
 library(plyr)
+library(optparse)
+
+##establishing options for Rscript
+option_list <- list(make_option(c('--inFolder', '-i'), 
+                                help = 'The full path to the directory containing Jacusa2 output files',
+                                default = ""))
+option.parser <- OptionParser(option_list = option_list)
+opt <- parse_args(option.parser)
+inFolder <- opt$inFolder
+all_files <- list.files(inFolder, pattern = ".out", recursive = T, full.names = T)
+message(paste0(" * found ", length(all_files), " Jacusa2 output files" ))
+
+fileNames <- list.files(inFolder, pattern = ".out", recursive = T, full.names = T)
+fileNumbers <- seq(fileNames)
+message(paste0(" * found ", length(fileNames), " Jacusa2 output files "))
+
+##for loop of filtering samples
+
 
 #restructuring Jacusa2 output and light sample-level filtering
 setwd("~/Downloads/denovofiles/")
@@ -26,11 +44,19 @@ for (fileNumber in fileNumbers){
   colnames(df) <- c("chrpos", "ref", "score", "totcov", "refcov", "alt", fileNames[fileNumber], "ESid")
   colnames(df) <- gsub(pattern = ".out", replacement = "", colnames(df))
   temp <- df[,c(8,2,5,6,7,4,3)]
+  
+  #outfile <- paste0(inFolder, paste0(fileNames[fileNumber], ".Jacusa2filt"))
+  #write.tsv(temp, path = outfile, quote = F, row.names = F, col.names = T)
   write.table(temp, file = paste0(fileNames[fileNumber], ".Jacusa2filt"), quote = F, sep = "\t", row.names = F, col.names = T)
 }
 
 #aggregating across samples
-files <- dir(path = "~/Downloads/denovofiles/", pattern = "*.Jacusa2filt")
+library(optparse)
+library(purrr)
+library(dplyr)
+library(tidyverse)
+
+files <- dir(path = , pattern = "*.Jacusa2filt")
 data <- files %>% map(read_tsv) #%>% join_all(,by = "ESid", type = "full")
 aggDF <- reduce(data, full_join, by = "ESid")
 covMat <- map(data, ~{

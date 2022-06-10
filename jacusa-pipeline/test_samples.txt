@@ -1,0 +1,3 @@
+sample	bam_path	library
+CASE-NEUAA599TMX-5310-T_P10	/sc/arion/projects/bigbrain/data/Answer_ALS/bams_from_RAPiD	FR-SECONDSTRAND
+CASE-NEUAB000NKC-5726-T_P68	/sc/arion/projects/bigbrain/data/Answer_ALS/bams_from_RAPiD	FR-SECONDSTRAND
