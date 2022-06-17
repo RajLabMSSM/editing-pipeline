@@ -48,12 +48,21 @@ rule firstFiltering:
 		script = "scripts/firstfiltering.R"
 		
 	shell:
+		# sed -i (work inplace) # find all line that contains 'id' and delete that line. 
+		# without this line, running inputfile through Rscript works
 		"sed -i '1d' {input.inFile};"
 		"ml R/4.0.2;"
 		"Rscript {params.script}"
-		"--input {input.inFile}"
-		"--output {output.outFile}"
-		
+		#adding blank space " --input.."
+		" --input {input.inFile}"
+		" --output {output.outFile};"
+		"rm '*.out.filtered'"	
+
+# there is an error'in rule mergeSecondFiltering 
+# Error: '17-094-GTS-unstim.filt' does not exist in current working directory ('/sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline').
+# as an temporary attempt,Copying .filt file to the /jacusa-pipeline directory
+##  works for now, fix the directory path error
+
 rule mergeSecondFiltering:
 	input:
 		expand(projectDir + "{sample}.filt", sample = samples)
@@ -62,19 +71,23 @@ rule mergeSecondFiltering:
 		ratioMat = projectDir + "ratioMatrix.txt",
 		av = projectDir + "avinput.txt"
 	params:
-		script = "scripts/mergeSecondFiltering.R",
+		# changing mergeSecondFiltering.R to
+		# secondfiltering.R
+		script = "scripts/secondfiltering.R",
+		# trying-> giving a full path
 		inDir = projectDir,
 		perc = 0.5,
 		er = 0.1
 	shell:
 		"ml R/4.0.2;"
 		"Rscript {params.script}"
-		"--inDir {params.inDir}"
-		"--rat {output.ratioMat}"
-		"--cov {output.covMat}"
-		"--av {output.av}"
-		"--percSamples {params.perc}"
-		"--minER {params.er}"
+		# adding blank space " --inDir.."
+		" --inDir {params.inDir}"
+		" --rat {output.ratioMat}"
+		" --cov {output.covMat}"
+		" --av {output.av}"
+		" --percSamples {params.perc}"
+		" --minER {params.er}"
 
 rule annovar:
 	input:
@@ -87,10 +100,34 @@ rule annovar:
 	shell:
 		"ml annovar;"
 		"table_annovar.pl {input.av} {params.humandb} -buildver hg38"
-		"-out {params.outfile} -remove -protocol refGene,dbsnp153CommonSNV,"
+		" -out {params.outfile} -remove -protocol refGene,dbsnp153CommonSNV,"
 		"gnomad30_genome,phastConsElements30way,rmsk,rediportal_012920"
-		"-operation g,f,f,r,r,f --argument ,,,'--colsWanted 5','--colsWanted 10&11&12',"
-		"-nastring '.' --otherinfo --thread 10 --maxGeneThread 10"
+		" -operation g,f,f,r,r,f"
+		#" --argument ,,, \'--colsWanted 5\',\'--colsWanted 10&11&12\',"
+		" -nastring \'.\' --otherinfo --thread 4 --maxGeneThread 4"
+
+
+		#"ml annovar;"
+		#"table_annovar.pl {input.av} {params.humandb} -buildver hg38"
+		#"-out {params.outfile} -remove -protocol refGene,dbsnp153CommonSNV,"
+		#"gnomad30_genome,phastConsElements30way,rmsk,rediportal_012920"
+		#"-operation g,f,f,r,r,f --argument ,,,'--colsWanted 5','--colsWanted 10&11&12',"
+		#"-nastring '.' --otherinfo --thread 10 --maxGeneThread 10" 
+
+
+		# ml annovar
+		# table_annovar.pl /sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/avinput.txt /sc/arion/projects/ad-omics/data/references/editing/humandb/ -buildver hg38 -out /sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/myanno -remove -protocol refGene,dbsnp153CommonSNV,gnomad30_genome,phastConsElements30way,rmsk,rediportal_102920 -operation g,f,f,r,r,f
+
+		# The following ( last  argument) causes error. 
+		# unrecognized argument
+		# --argument ,,, '--colsWanted 5','--colsWanted 10&11&12',-nastring '.' --otherinfo --thread 10 -- maxGeneThread 10
+
+
+
+
+# Error in the AWK command 
+# awk: cmd. line:2: BEGIN{OFS=FS=
+# awk: cmd. line:2:              ^ unexpected newline or end of string
 
 rule dropSNPs:
 	input:
@@ -100,7 +137,10 @@ rule dropSNPs:
 	shell:	
 		"awk 'BEGIN{{OFS=FS='\t'}}{{if ( ($11=='.' || $11=='dbSNP153CommonSNV')"
 		"&& ( $12<0.05 || $12=='AF')) print $0}}' {input.anno} > {output.filtanno}"
+		# print $ 0 = print all 
 
+		# "awk 'BEGIN{{OFS=FS='\t'}}{{if
+		#
 rule annovarFiltering:
 	input:
 		filtanno = projectDir + "myanno.hg38_multianno.txt.noCommon.txt",
@@ -115,9 +155,9 @@ rule annovarFiltering:
 	shell:
 		"ml R/4.0.2;"
 		"Rscript {params.script}"
-		"--inAnno {input.filtanno}"
-		"--inRat {input.ratioMat}"
-		"--inCov {input.covMat}"
-		"--outAnno {output.ESanno}"
-		"--outRat {output.filtRatioMat}"
-		"--outCov {output.filtCovMat}"
+		" --inAnno {input.filtanno}"
+		" --inRat {input.ratioMat}"
+		" --inCov {input.covMat}"
+		" --outAnno {output.ESanno}"
+		" --outRat {output.filtRatioMat}"
+		" --outCov {output.filtCovMat}"

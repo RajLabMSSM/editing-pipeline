@@ -23,7 +23,21 @@ X <- opt$percSamples
 Y <- opt$minER
 
 #aggregating across samples
-files <- dir(path = inDir, pattern = "*.filt")
+#inDir <- "/sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/"
+#path = inDir
+#print(path)
+
+#debug line 
+message("inDirectory") 
+print(inDir)
+#stop()
+
+
+files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE)
+message(length(files) , " number of files to be read in")
+#print(files)
+#stop()
+
 data <- files %>% map(read_tsv)
 aggDF <- reduce(data, full_join, by = "ESid")
 covMat <- map(data, ~{
