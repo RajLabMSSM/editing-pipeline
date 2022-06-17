@@ -16,60 +16,98 @@ option.parser <- OptionParser(option_list = option_list)
 opt <- parse_args(option.parser)
 
 inDir <- opt$inDir
-covMatOut <- opt$cov
-ratMatOut <- opt$rat
-avOut <- opt$av
-X <- opt$percSamples
-Y <- opt$minER
+coverage_df_out <- opt$cov
+ratio_df_out <- opt$rat
+annovar_out <- opt$av
+perc_samples <- opt$percSamples
+min_edrate <- opt$minER
 
 #aggregating across samples
 #inDir <- "/sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/"
 #path = inDir
 #print(path)
 
-#debug line 
-message("inDirectory") 
-print(inDir)
-#stop()
+#message("inDirectory") 
+#print(inDir)
 
 
 files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE)
-message(length(files) , " number of files to be read in")
+message(" * merging ", length(files) , " jacusa files")
 #print(files)
 #stop()
 
-data <- files %>% map(read_tsv)
-aggDF <- reduce(data, full_join, by = "ESid")
-covMat <- map(data, ~{
+message(" * reading files")
+data <- files %>% map(read_tsv, col_types = "ccncnnn")
+
+message(" * merging files!")
+
+#aggDF <- reduce(data, full_join, by = "ESid")
+
+# coverage matrix - total site coverage in each sample 
+coverage_df <- map(data, ~{
   d <- select(.x, ESid, totcov)
   colnames(d)[2] <- colnames(.x)[5]
   return(d)
-}) %>% reduce(full_join, by = "ESid")
+}) %>% reduce(full_join, by = "ESid") %>%
+    column_to_rownames("ESid")
 
-ratioMat <- map(data, ~{
-  .x$edrat <- .x[,5]/.x[,6]
+# ratio matrix - edited / total reads for each site in each sample
+ratio_df <- map(data, ~{
+  .x$edrat <- .x$refcov/.x$totcov
   d <- select(.x, ESid, edrat)
   colnames(d)[2] <- colnames(.x)[5]
   return(d)
-}) %>% reduce(full_join, by = "ESid")
+}) %>% reduce(full_join, by = "ESid") %>% 
+    column_to_rownames("ESid")
 
+print(head(ratio_df))
+
+message(" * ", nrow(coverage_df), " sites found in total")
+#save.image("debug.RData")
+#stop()
 #cohort level-filtering: editing sites must validate across 50% of samples and have editing efficiency of at least 10% with default settings
-N <- ceiling(length(files) * X) #where the --percSamples flag comes in
-covMat <- covMat[which(rowSums(!is.na(covMat[,-1])) >= N),]
-ratioMat <- ratioMat[which(rowMeans(ratioMat[,-1]) >= Y),] #where the --minER flag comes in
+sample_n <- ceiling(length(files) * perc_samples) #where the --percSamples flag comes in
 
-covMatfinal <- subset(covMat, (covMat$ESid %in% intersect(covMat$ESid, ratioMat$ESid)))
-ratioMatfinal <- subset(ratioMat, (ratioMat$ESid %in% intersect(covMat$ESid, ratioMat$ESid)))
+coverage_df_filt <- coverage_df[which(rowSums(!is.na(coverage_df)) >= sample_n),]
 
-write.table(ratioMatfinal, file = ratMatOut, quote = F, sep = "\t", row.names = F, col.names = T)
-write.table(covMatfinal, file = covMatOut, quote = F, sep = "\t", row.names = F, col.names = T)
+message( " * ", nrow(coverage_df_filt), " sites are found in at least ", perc_samples * 100, "% of samples (", sample_n, ")" )
+
+ratio_df_filt <- ratio_df[which(rowMeans(ratio_df, na.rm = TRUE) >= min_edrate),] #where the --minER flag comes in
+
+message( " * ", nrow(ratio_df_filt), " sites have at least ", min_edrate * 100, "% mean editing rate" )
+
+clean_sites <- intersect(row.names(coverage_df_filt), row.names(ratio_df_filt) )
+
+clean_sites <- clean_sites[order(clean_sites) ]
+
+message( " * keeping ", length(clean_sites), " editing sites total" )
+
+coverage_df_final <- coverage_df[clean_sites,] %>% rownames_to_column("ESid")
+
+ratio_df_final <- ratio_df[clean_sites,] %>% rownames_to_column("ESid")
+
+#coverage_df_final <- arrange(coverage_df_final, ESid)
+#ratio_df_final <- arrange(ratio_df_final, ESid)
+
+write_tsv(coverage_df_final, file = coverage_df_out)
+write_tsv(ratio_df_final, file = ratio_df_out)
 
 #formatting for annovar
-annovar <- data.frame(ratioMatfinal$ESid, do.call(rbind, strsplit(ratioMatfinal$ESid, split = ":", fixed = TRUE)))
-annovar <- annovar[,c(2,3,3,4,5)]
-colnames(annovar) <- c("Chr", "Start", "Stop", "Ref", "Alt")
+annovar <- tibble(ESid = ratio_df_final$ESid) %>%
+    tidyr::separate(col = ESid, into = c("Chr", "Stop", "Ref", "Alt"), sep = ":") %>%
+    mutate(Start = Stop) %>%
+    select(Chr, Start, Stop, Ref, Alt)
 
-write.table(annovar, file = avOut, append = FALSE, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+#annovar <- data.frame(ratio_df_final$ESid, do.call(rbind, strsplit(ratio_dffinal$ESid, split = ":", fixed = TRUE)))
+#annovar <- annovar[,c(2,3,3,4,5)]
+#colnames(annovar) <- c("Chr", "Start", "Stop", "Ref", "Alt")
+
+message(" * writing out in VCF format for Annovar")
+print(head(annovar) )
+
+write_tsv(annovar, file = annovar_out, col_names = FALSE)
+
+#, append = FALSE, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
 

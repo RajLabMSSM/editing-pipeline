@@ -1,7 +1,8 @@
 #RNA Editing Pipline
-#Winston Cuddleston, Raj Lab
+#Winston Cuddleston, Flora Seo, Jack Humphrey, Raj Lab
 #2022
 
+R_VERSION = "R/4.0.3"
 import pandas as pd
 import os
 
@@ -27,7 +28,7 @@ rule jacusa:
 		blacklist = editingRefDir + "hg38-blacklist.v2_sort.bed",
 		fastaref = refDir + "GRCh38.primary_assembly.genome.fa"
 	output:
-		outFile = projectDir + "{sample}.out"
+		outFile = projectDir + "{sample}/{sample}.out"
 	run:
 		bam_dir = metadata_dict[wildcards.sample]["bam_path"]
 		full_bam = bam_dir + "/" + wildcards.sample + ".bam"
@@ -41,9 +42,9 @@ rule jacusa:
 
 rule firstFiltering:
 	input:
-		inFile = projectDir + "{sample}.out"
+		inFile = projectDir + "{sample}/{sample}.out"
 	output:
-		outFile = projectDir + "{sample}.filt"
+		outFile = projectDir + "{sample}/{sample}.filt"
 	params:
 		script = "scripts/firstfiltering.R"
 		
@@ -51,7 +52,7 @@ rule firstFiltering:
 		# sed -i (work inplace) # find all line that contains 'id' and delete that line. 
 		# without this line, running inputfile through Rscript works
 		"sed -i '1d' {input.inFile};"
-		"ml R/4.0.2;"
+		"ml {R_VERSION};"
 		"Rscript {params.script}"
 		#adding blank space " --input.."
 		" --input {input.inFile}"
@@ -65,7 +66,7 @@ rule firstFiltering:
 
 rule mergeSecondFiltering:
 	input:
-		expand(projectDir + "{sample}.filt", sample = samples)
+		expand(projectDir + "{sample}/{sample}.filt", sample = samples)
 	output:
 		covMat = projectDir + "coverageMatrix.txt",
 		ratioMat = projectDir + "ratioMatrix.txt",
@@ -79,7 +80,7 @@ rule mergeSecondFiltering:
 		perc = 0.5,
 		er = 0.1
 	shell:
-		"ml R/4.0.2;"
+		"ml {R_VERSION};"
 		"Rscript {params.script}"
 		# adding blank space " --inDir.."
 		" --inDir {params.inDir}"
@@ -105,7 +106,7 @@ rule annovar:
 		" -operation g,f,f,r,r,f"
 		#" --argument ,,, \'--colsWanted 5\',\'--colsWanted 10&11&12\',"
 		# the thread was changed from 10 to 4 
-		" -nastring \'.\' --otherinfo --thread 4 --maxGeneThread 4"
+		" -nastring \'.\' --otherinfo --thread 10 --maxGeneThread 10"
 
 
 		# ml annovar
@@ -115,26 +116,9 @@ rule annovar:
 		# unrecognized argument
 		# --argument ,,, '--colsWanted 5','--colsWanted 10&11&12',
 
-
-# Error in the AWK command 
-# awk: cmd. line:2: BEGIN{OFS=FS=
-# awk: cmd. line:2:              ^ unexpected newline or end of string
-
-rule dropSNPs:
-	input:
-		anno = projectDir + "myanno.hg38_multianno.txt"
-	output:
-		filtanno = projectDir + "myanno.hg38_multianno.txt.noCommon.txt"
-	shell:	
-		"awk 'BEGIN{{OFS=FS='\t'}}{{if ( ($11=='.' || $11=='dbSNP153CommonSNV')"
-		"&& ( $12<0.05 || $12=='AF')) print $0}}' {input.anno} > {output.filtanno}"
-		# print $ 0 = print all 
-
-		# "awk 'BEGIN{{OFS=FS='\t'}}{{if
-		#
 rule annovarFiltering:
 	input:
-		filtanno = projectDir + "myanno.hg38_multianno.txt.noCommon.txt",
+		filtanno = projectDir + "myanno.hg38_multianno.txt",
 		covMat = projectDir + "coverageMatrix.txt",
 		ratioMat = projectDir + "ratioMatrix.txt"
 	output:
@@ -144,7 +128,7 @@ rule annovarFiltering:
 	params:
 		script = "scripts/annovarfiltering.R"
 	shell:
-		"ml R/4.0.2;"
+		"ml {R_VERSION};"
 		"Rscript {params.script}"
 		" --inAnno {input.filtanno}"
 		" --inRat {input.ratioMat}"
