@@ -104,15 +104,8 @@ rule annovar:
 		"gnomad30_genome,phastConsElements30way,rmsk,rediportal_012920"
 		" -operation g,f,f,r,r,f"
 		#" --argument ,,, \'--colsWanted 5\',\'--colsWanted 10&11&12\',"
+		# the thread was changed from 10 to 4 
 		" -nastring \'.\' --otherinfo --thread 4 --maxGeneThread 4"
-
-
-		#"ml annovar;"
-		#"table_annovar.pl {input.av} {params.humandb} -buildver hg38"
-		#"-out {params.outfile} -remove -protocol refGene,dbsnp153CommonSNV,"
-		#"gnomad30_genome,phastConsElements30way,rmsk,rediportal_012920"
-		#"-operation g,f,f,r,r,f --argument ,,,'--colsWanted 5','--colsWanted 10&11&12',"
-		#"-nastring '.' --otherinfo --thread 10 --maxGeneThread 10" 
 
 
 		# ml annovar
@@ -120,9 +113,7 @@ rule annovar:
 
 		# The following ( last  argument) causes error. 
 		# unrecognized argument
-		# --argument ,,, '--colsWanted 5','--colsWanted 10&11&12',-nastring '.' --otherinfo --thread 10 -- maxGeneThread 10
-
-
+		# --argument ,,, '--colsWanted 5','--colsWanted 10&11&12',
 
 
 # Error in the AWK command 
