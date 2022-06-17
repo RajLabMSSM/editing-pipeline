@@ -1,9 +1,21 @@
 __default__:
-  queue: express
-  cores: 1
-  mem: 3750
-  time: '120'
-  name: $(basename $(pwd)):{rule}:{wildcards}
-  output: logs/{rule}:{wildcards}.stdout
-  error: logs/{rule}:{wildcards}.stderr
-  himem: ""
+    queue: express
+    cores: 1
+    mem: 3750
+    time: '120'
+    name: $(basename $(pwd)):{rule}:{wildcards}
+    output: logs/{rule}:{wildcards}.stdout
+    error: logs/{rule}:{wildcards}.stderr
+    himem: ""
+annovar:
+    cores: 12
+    mem: 3750
+    time: '720'
+jacusa:
+    cores: 1
+    mem: 8000
+    time: '360'
+mergeSecondFiltering:
+    cores: 1
+    mem: 12000
+    time: '360'

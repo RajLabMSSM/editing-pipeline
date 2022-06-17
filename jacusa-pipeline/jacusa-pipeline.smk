@@ -3,6 +3,8 @@
 #2022
 
 R_VERSION = "R/4.0.3"
+jacusa_threads = 10
+annovar_threads = 12
 import pandas as pd
 import os
 
@@ -36,10 +38,14 @@ rule jacusa:
 		shell("ml jacusa2; \
 		       java -jar $JACUSA2_JAR call-1 \
 		       -r {output.outFile} {full_bam} \
-		       -p 10 -a D,M,Y,E:file={input.blacklist}:type=BED \
+		       -p {jacusa_threads} -a D,M,Y,E:file={input.blacklist}:type=BED \
 		       -s -m 20 -R {input.fastaref} -P {lib} -F 1024"
 		       )
 
+# format jacusa outputs for R
+# split multi-allelic sites
+# light filtering - total coverage at least 10 reads
+# at least 2 edited reads
 rule firstFiltering:
 	input:
 		inFile = projectDir + "{sample}/{sample}.out"
@@ -59,11 +65,7 @@ rule firstFiltering:
 		" --output {output.outFile};"
 		"rm '*.out.filtered'"	
 
-# there is an error'in rule mergeSecondFiltering 
-# Error: '17-094-GTS-unstim.filt' does not exist in current working directory ('/sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline').
-# as an temporary attempt,Copying .filt file to the /jacusa-pipeline directory
-##  works for now, fix the directory path error
-
+# merge files together
 rule mergeSecondFiltering:
 	input:
 		expand(projectDir + "{sample}/{sample}.filt", sample = samples)
@@ -106,7 +108,7 @@ rule annovar:
 		" -operation g,f,f,r,r,f"
 		#" --argument ,,, \'--colsWanted 5\',\'--colsWanted 10&11&12\',"
 		# the thread was changed from 10 to 4 
-		" -nastring \'.\' --otherinfo --thread 10 --maxGeneThread 10"
+		" -nastring \'.\' --otherinfo --thread {annovar_threads} --maxGeneThread {annovar_threads}"
 
 
 		# ml annovar
