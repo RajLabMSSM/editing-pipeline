@@ -20,23 +20,48 @@ siteDepth <- opt$siteDepth
 sampleFile <- basename(input)
 sampleID <- gsub(".out", "", sampleFile)
 
-cat("Loading Jacusa2 output from",input,"\n")
+message("Loading Jacusa2 output from ",input)
 if (!file.exists(input)) stop("File ",input," does not exist")
-out <- read.delim(input, header = T, sep = "\t")
 
-OUT <- cSplit(out, "bases11",",", direction = "wide") #split base vector into four columns
-OUT <- OUT[,-c(2,4,6,7,8)] #"end" pos is true location so drop "start", "name" was a place holder used by Jacusa2, strand&info&filter are not used downstream
-colnames(OUT) <- c("chr", "pos", "score", "ref", "A", "C", "G", "T") #assigning new column names to make obvious the order of the bases vector
-OUT$totcov <- rowSums(OUT[,c(5:8)]) #creating total coverage column for easy filtering downstream
-DF <- OUT %>% mutate(refcov = case_when(ref == "T" ~ .[[8]], ref == "A" ~ .[[5]], ref == "G" ~ .[[7]], ref == "C" ~ .[[6]]), chrpos = paste0(chr, ":", pos)) #creating chr:pos tag & ref cov columns
-DF <- DF[,-c(1:2)] #dropping chr & pos separated
-DF <- DF[,c(9,2,1,7,8,3,4,5,6)] #tidying column order
-DFnew <- DF %>% pivot_longer(!c(chrpos, ref, score, refcov, totcov), names_to = "alt", values_to = "cov") #converting from wide to long format
-DFnew <- DFnew[which(DFnew$ref != DFnew$alt & DFnew$totcov >= siteDepth & DFnew$cov > altDepth, ),] #remove rows where ref & alt are the same, remove alt with 0 coverage, require editing site to be covered by >=10 (default) reads and >=2 (defaul) reads covering the edited allele
-DFnewer <- DFnew[!duplicated(DFnew$chrpos),] #drop multiallelic sites
-df <- DFnewer %>% mutate(ESid = paste0(chrpos, ":", ref, ":", alt)) #creating ESid for sample-level aggregation
-colnames(df) <- c("chrpos", "ref", "score", "totcov", "refcov", "alt", sampleID, "ESid")
-colnames(df) <- gsub(pattern = ".out", replacement = "", colnames(df))
-temp <- df[,c(8,2,5,6,7,4,3)]
+# JH refactoring into tidyverse
+df <- read_tsv(input, skip = 1)
 
-write.table(temp, file = output, quote = F, sep = "\t", row.names = F, col.names = T)
+# split base vector into 4
+message(" * splitting counts by base")
+
+df <- tidyr::separate(df, col = bases11, into = c("A","C","G","T"), sep = ",", convert = TRUE)
+
+df <- select(df, chr =  `#contig`, pos = end, score, ref, "A", "C", "G", "T") 
+
+# sum coverage across bases to get total
+df$total_cov <- rowSums(df[,5:8])
+
+df <- df %>% 
+    mutate(ref_cov = case_when(
+        ref == "A" ~ .[[5]], 
+        ref == "C" ~ .[[6]], 
+        ref == "G" ~ .[[7]], 
+        ref == "T" ~ .[[8]]
+        )) %>%
+    mutate(chrpos = paste0(chr, ":", pos) ) %>%
+    select(chrpos, score, ref, "A", "C", "G", "T", ref_cov, total_cov)
+
+message(" * ", nrow(df), " sites loaded")
+# pivot
+df_long <- df %>% pivot_longer(!c(chrpos, ref, score, ref_cov, total_cov), names_to = "alt", values_to = "alt_cov") 
+# remove rows where ref & alt are the same, remove alt with 0 coverage
+df_long <- filter(df_long, ref != alt & alt_cov > 0)
+
+#require editing site to be covered by >=10 (default) reads and >=2 (defaul) reads covering the edited allele
+df_filt <- 
+    df_long %>%
+    filter(total_cov >= siteDepth & alt_cov >= altDepth) %>%
+    mutate( 
+        ESid = paste0(chrpos, ":", ref, ":", alt),
+        edit_rate = alt_cov / total_cov 
+        ) %>% 
+    select(ESid, score, total_cov, ref_cov, alt_cov, edit_rate)
+
+message(" * ", nrow(df_filt), " sites pass thresholds")
+
+write_tsv(df_filt, file = output)

@@ -12,10 +12,11 @@ annovar:
     mem: 3750
     time: '720'
 jacusa:
-    cores: 1
-    mem: 8000
+    cores: 4
+    mem: 3750
     time: '360'
 mergeSecondFiltering:
     cores: 1
-    mem: 12000
+    mem: 36000
     time: '360'
+    himem: "-R himem"

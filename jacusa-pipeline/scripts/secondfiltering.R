@@ -31,34 +31,56 @@ min_edrate <- opt$minER
 #print(inDir)
 
 
-files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE)
-message(" * merging ", length(files) , " jacusa files")
+files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE, recursive = TRUE)
+
+#files <- head(files,10)
+
+message(" * found ", length(files) , " jacusa files")
 #print(files)
 #stop()
 
 message(" * reading files")
-data <- files %>% map(read_tsv, col_types = "ccncnnn")
+sample_ids <- gsub(".filt", "", basename(files) )
+
+data <- files %>% map(read_tsv, col_types = "cnnnnn")
+names(data) <- sample_ids
 
 message(" * merging files!")
 
 #aggDF <- reduce(data, full_join, by = "ESid")
 
-# coverage matrix - total site coverage in each sample 
-coverage_df <- map(data, ~{
-  d <- select(.x, ESid, totcov)
-  colnames(d)[2] <- colnames(.x)[5]
-  return(d)
-}) %>% reduce(full_join, by = "ESid") %>%
-    column_to_rownames("ESid")
+# get list of  all sites but remove singletons!
+all_sites <- map(data, "ESid") %>% unlist() 
+all_sites <- all_sites[duplicated(all_sites)]
 
-# ratio matrix - edited / total reads for each site in each sample
-ratio_df <- map(data, ~{
-  .x$edrat <- .x$refcov/.x$totcov
-  d <- select(.x, ESid, edrat)
-  colnames(d)[2] <- colnames(.x)[5]
-  return(d)
-}) %>% reduce(full_join, by = "ESid") %>% 
-    column_to_rownames("ESid")
+#%>% unique()
+
+message(" * ", length(all_sites), " unique sites found")
+
+# coverage matrix - total site coverage in each sample 
+joint_sites <- map2(data, sample_ids, ~{
+  print(.y)
+  d <- column_to_rownames(.x, "ESid")
+  return(d[all_sites,])
+})
+
+message(" * filling matrices ")
+
+## now just extract columns and bind - no fancy join needed
+coverage_df <- map2(joint_sites, sample_ids, ~{
+    d <- select(.x, total_cov)
+    names(d)[1] <- .y
+    return(d)
+}) %>% reduce(cbind)
+
+row.names(coverage_df) <- all_sites
+
+ratio_df <- map2(joint_sites, sample_ids, ~{
+    d <- select(.x, edit_rate)
+    names(d)[1] <- .y
+    return(d)
+}) %>% reduce(cbind)
+row.names(ratio_df) <- all_sites
 
 print(head(ratio_df))
 
