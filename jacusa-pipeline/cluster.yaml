@@ -17,6 +17,6 @@ jacusa:
     time: '360'
 mergeSecondFiltering:
     cores: 1
-    mem: 36000
+    mem: 50000
     time: '360'
     himem: "-R himem"

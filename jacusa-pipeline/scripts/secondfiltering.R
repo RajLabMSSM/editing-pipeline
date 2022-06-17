@@ -53,8 +53,6 @@ message(" * merging files!")
 all_sites <- map(data, "ESid") %>% unlist() 
 all_sites <- all_sites[duplicated(all_sites)]
 
-#%>% unique()
-
 message(" * ", length(all_sites), " unique sites found")
 
 # coverage matrix - total site coverage in each sample 
