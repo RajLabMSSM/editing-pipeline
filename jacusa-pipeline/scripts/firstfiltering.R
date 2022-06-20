@@ -60,7 +60,8 @@ df_filt <-
         ESid = paste0(chrpos, ":", ref, ":", alt),
         edit_rate = alt_cov / total_cov 
         ) %>% 
-    select(ESid, score, total_cov, ref_cov, alt_cov, edit_rate)
+    separate(col = chrpos, into = c("chr", "pos"), sep = ":") %>%
+    select(ESid, chr, pos, score, total_cov, ref_cov, alt_cov, edit_rate)
 
 message(" * ", nrow(df_filt), " sites pass thresholds")
 

@@ -8,6 +8,7 @@ library(tidyverse)
 option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = ''),
                     make_option(c('--rat'), help = 'Name of the ratio matrix output file', default = ''),
                     make_option(c('--cov'), help = 'Name of the coverage matrix output file', default = ''),
+                    make_option(c('--chr'), help = 'the chromosome to work on', default = 'chr21'),
                     make_option(c('--av'), help = 'Name of the vcf file for annotation in annovar', default = ''),
                     make_option(c('--percSamples'), default = 0.5, help = '% of samples editing site is required to validate across'),
                     make_option(c('--minER'), default = 0.1, help = 'minimum editing ratio'))
@@ -21,7 +22,7 @@ ratio_df_out <- opt$rat
 annovar_out <- opt$av
 perc_samples <- opt$percSamples
 min_edrate <- opt$minER
-
+chromosome <- opt$chr
 #aggregating across samples
 #inDir <- "/sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/"
 #path = inDir
@@ -33,7 +34,7 @@ min_edrate <- opt$minER
 
 files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE, recursive = TRUE)
 
-#files <- head(files,10)
+#files <- head(files,20)
 
 message(" * found ", length(files) , " jacusa files")
 #print(files)
@@ -42,7 +43,11 @@ message(" * found ", length(files) , " jacusa files")
 message(" * reading files")
 sample_ids <- gsub(".filt", "", basename(files) )
 
-data <- files %>% map(read_tsv, col_types = "cnnnnn")
+data <- map(files,~{
+    read_tsv(.x, col_types = "ccnnnnnn") %>%
+    filter(chr == chromosome)
+})
+
 names(data) <- sample_ids
 
 message(" * merging files!")
@@ -52,14 +57,16 @@ message(" * merging files!")
 # get list of  all sites but remove singletons!
 all_sites <- map(data, "ESid") %>% unlist() 
 all_sites <- all_sites[duplicated(all_sites)]
+all_sites <- unique(all_sites)
+#all_sites <- all_sites[1:10000]
 
 message(" * ", length(all_sites), " unique sites found")
 
 # coverage matrix - total site coverage in each sample 
 joint_sites <- map2(data, sample_ids, ~{
-  print(.y)
-  d <- column_to_rownames(.x, "ESid")
-  return(d[all_sites,])
+    print(.y)
+  
+    left_join(data.frame(ESid = all_sites), .x, by = "ESid")
 })
 
 message(" * filling matrices ")
