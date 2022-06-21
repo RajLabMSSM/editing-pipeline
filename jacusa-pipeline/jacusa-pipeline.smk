@@ -4,6 +4,7 @@
 
 R_VERSION = "R/4.0.3"
 jacusa_threads = 40
+jacusa_multi_threads = 10
 annovar_threads = 8
 import pandas as pd
 import os
@@ -22,7 +23,8 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 rule all:
     input:
         projectDir + "filtCoverageMatrix.txt",
-        projectDir + "filtRatioMatrix.txt"
+        projectDir + "filtRatioMatrix.txt",
+        expand(projectDir + "{sample}/jacusa_multi_pileup.txt", sample = samples)
 
 rule jacusa:
     input:
@@ -140,3 +142,21 @@ rule annovarFiltering:
         " --outCov {output.filtCovMat}"
         " --outBed {output.outBed}"
         " --gencode {gencode}"
+
+# get counts of each filtered site in each sample
+
+# run jacusa with set of sites
+rule jacusa_pileup:
+    input:
+        bed = projectDir + "editing_sites.bed"
+    output:
+        projectDir + "{sample}/jacusa_multi_pileup.txt"
+    run:
+        bam_file = os.path.join(metadata_dict[wildcards.sample]["bam_path"], wildcards.sample + ".bam")
+        
+        shell("ml jacusa2; java -jar $JACUSA2_JAR call-1 \
+            -r {output} -b {input.bed} {bam_file} \
+            -p {jacusa_multi_threads}\
+            -a D -F 1024 \
+            -A ")
+

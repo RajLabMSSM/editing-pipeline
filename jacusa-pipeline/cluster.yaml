@@ -15,6 +15,10 @@ jacusa:
     cores: 4
     mem: 3750
     time: '360'
+jacusa_pileup:
+    cores: 4
+    mem: 3750
+    time: '720'
 mergeSecondFiltering:
     cores: 1
     mem: 100000
