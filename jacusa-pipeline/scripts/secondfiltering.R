@@ -1,11 +1,14 @@
 #!/usr/bin/env Rscript
+# merge sites together
+# Winston Cuddleston, Jack Humphrey, Hyomin Seo
+# 2022
 
 library(optparse)
 library(purrr)
 library(dplyr)
 library(tidyverse)
 
-option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = ''),
+option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
                     make_option(c('--rat'), help = 'Name of the ratio matrix output file', default = ''),
                     make_option(c('--cov'), help = 'Name of the coverage matrix output file', default = ''),
                     make_option(c('--chr'), help = 'the chromosome to work on', default = 'chr21'),
@@ -30,7 +33,8 @@ chromosome <- opt$chr
 
 #message("inDirectory") 
 #print(inDir)
-
+temp_cov <- paste0(inDir, "/all_sites_coverage.tsv.gz")
+temp_rat <- paste0(inDir, "/all_sites_ratio.tsv.gz")
 
 files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE, recursive = TRUE)
 
@@ -43,51 +47,70 @@ message(" * found ", length(files) , " jacusa files")
 message(" * reading files")
 sample_ids <- gsub(".filt", "", basename(files) )
 
-data <- map(files,~{
-    read_tsv(.x, col_types = "ccnnnnnn") %>%
-    filter(chr == chromosome)
-})
+chroms <- paste0("chr", c(1:22, "X","Y","M") )
 
-names(data) <- sample_ids
+# read in all files together as list
+all_data <-  map(files,~{
+        read_tsv(.x, col_types = "ccnnnnnn")
+    })
 
-message(" * merging files!")
+
+for(chromosome in chroms){
+    print(chromosome)
+    
+    data <- map(all_data,~{
+        filter(.x, chr == chromosome)
+    })
+
+    names(data) <- sample_ids
+
+    message(" * merging files!")
 
 #aggDF <- reduce(data, full_join, by = "ESid")
 
 # get list of  all sites but remove singletons!
-all_sites <- map(data, "ESid") %>% unlist() 
-all_sites <- all_sites[duplicated(all_sites)]
-all_sites <- unique(all_sites)
+    all_sites <- map(data, "ESid") %>% unlist() 
+    all_sites <- all_sites[duplicated(all_sites)]
+    all_sites <- unique(all_sites)
 #all_sites <- all_sites[1:10000]
 
-message(" * ", length(all_sites), " unique sites found")
+    message(" * ", length(all_sites), " unique sites found")
 
 # coverage matrix - total site coverage in each sample 
-joint_sites <- map2(data, sample_ids, ~{
-    print(.y)
-  
-    left_join(data.frame(ESid = all_sites), .x, by = "ESid")
-})
+    joint_sites <- map2(data, sample_ids, ~{
+#    print(.y)
+        left_join(data.frame(ESid = all_sites), .x, by = "ESid")
+    })
 
-message(" * filling matrices ")
+    message(" * filling matrices ")
 
 ## now just extract columns and bind - no fancy join needed
-coverage_df <- map2(joint_sites, sample_ids, ~{
+    coverage_df <- map2(joint_sites, sample_ids, ~{
     d <- select(.x, total_cov)
     names(d)[1] <- .y
     return(d)
-}) %>% reduce(cbind)
+    }) %>% reduce(cbind)
 
-row.names(coverage_df) <- all_sites
+    row.names(coverage_df) <- all_sites
 
-ratio_df <- map2(joint_sites, sample_ids, ~{
-    d <- select(.x, edit_rate)
-    names(d)[1] <- .y
-    return(d)
-}) %>% reduce(cbind)
-row.names(ratio_df) <- all_sites
+    ratio_df <- map2(joint_sites, sample_ids, ~{
+        d <- select(.x, edit_rate)
+        names(d)[1] <- .y
+        return(d)
+    }) %>% reduce(cbind)
+    row.names(ratio_df) <- all_sites
 
-print(head(ratio_df))
+    ratio_df <- rownames_to_column(ratio_df, "ESid")
+    coverage_df <- rownames_to_column(coverage_df, "ESid")
+#print(head(ratio_df))
+
+    write_tsv(coverage_df, file = temp_cov, col_names = chromosome == "chr1", append = chromosome != "chr1")
+    write_tsv(ratio_df, file = temp_rat, col_names = chromosome == "chr1", append = chromosome != "chr1")
+    gc()
+}
+
+coverage_df <- read_tsv(temp_cov) %>% column_to_rownames("ESid")
+ratio_df <- read_tsv(temp_rat) %>% column_to_rownames("ESid")
 
 message(" * ", nrow(coverage_df), " sites found in total")
 #save.image("debug.RData")
@@ -125,16 +148,8 @@ annovar <- tibble(ESid = ratio_df_final$ESid) %>%
     mutate(Start = Stop) %>%
     select(Chr, Start, Stop, Ref, Alt)
 
-#annovar <- data.frame(ratio_df_final$ESid, do.call(rbind, strsplit(ratio_dffinal$ESid, split = ":", fixed = TRUE)))
-#annovar <- annovar[,c(2,3,3,4,5)]
-#colnames(annovar) <- c("Chr", "Start", "Stop", "Ref", "Alt")
-
 message(" * writing out in VCF format for Annovar")
 print(head(annovar) )
 
 write_tsv(annovar, file = annovar_out, col_names = FALSE)
-
-#, append = FALSE, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
-
-
 
