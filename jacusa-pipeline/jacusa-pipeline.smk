@@ -14,11 +14,17 @@ refDir = config["refDir"]
 editingRefDir = config["editingRefDir"]
 humandbDir = config["humandbDir"]
 gencode = "/sc/arion/projects/ad-omics/data/references//hg38_reference/GENCODE/gencode.v38.primary_assembly/gencode.v38.primary_assembly.gene_strand.tsv.gz" # just gene_id, gene_name, and strand
+
 #data
 projectDir = config["projectDir"]
 metadata =  pd.read_csv(config["metadata"], sep = "\t")
 samples = metadata['sample']
 metadata_dict = metadata.set_index('sample').T.to_dict()
+
+# variables - put these in config, experiment with relaxing
+min_coverage = 0.5
+min_edit_rate = 0.1 
+
 
 rule all:
     input:
@@ -26,6 +32,9 @@ rule all:
         projectDir + "filtRatioMatrix.txt",
         expand(projectDir + "{sample}/jacusa_multi_pileup.txt", sample = samples)
 
+# call RNA editing genome-wide
+# remove blacklist regions
+# at some point offer ability to filter on VCF
 rule jacusa:
     input:
         blacklist = editingRefDir + "hg38-blacklist.v2_sort.bed",
@@ -48,7 +57,7 @@ rule jacusa:
 # split multi-allelic sites
 # light filtering - total coverage at least 10 reads
 # at least 2 edited reads
-rule firstFiltering:
+rule format_jacusa:
     input:
         inFile = projectDir + "{sample}/{sample}.out"
     output:
@@ -67,7 +76,7 @@ rule firstFiltering:
         " --output {output.outFile}"
 
 # merge files together
-rule mergeSecondFiltering:
+rule merge_jacusa:
     input:
         expand(projectDir + "{sample}/{sample}.filt", sample = samples)
     output:
@@ -77,8 +86,8 @@ rule mergeSecondFiltering:
     params:
         script = "scripts/secondfiltering.R",
         inDir = projectDir,
-        perc = 0.5,
-        er = 0.1
+        perc = min_coverage,
+        er = min_edit_rate
     shell:
         "ml {R_VERSION};"
         "Rscript {params.script}"
@@ -90,6 +99,7 @@ rule mergeSecondFiltering:
         " --minER {params.er}"
 
 # annotate variants
+# look into using GENCODE instead of refGene at some point
 rule annovar:
     input:
         av = projectDir + "avinput.txt"
@@ -110,16 +120,9 @@ rule annovar:
         # the thread was changed from 10 to 4 
         " -nastring \'.\' --otherinfo --thread {annovar_threads} --maxGeneThread {annovar_threads}"
 
-
-        # ml annovar
-        # table_annovar.pl /sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/avinput.txt /sc/arion/projects/ad-omics/data/references/editing/humandb/ -buildver hg38 -out /sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/myanno -remove -protocol refGene,dbsnp153CommonSNV,gnomad30_genome,phastConsElements30way,rmsk,rediportal_102920 -operation g,f,f,r,r,f
-
-        # The following ( last  argument) causes error. 
-        # unrecognized argument
-        # --argument ,,, '--colsWanted 5','--colsWanted 10&11&12',
-
 # more filtering
-rule annovarFiltering:
+# don't need to output matrices at this point, only annotation and BED files needed
+rule filter_annovar:
     input:
         filtanno = projectDir + "myanno.hg38_multianno.txt",
         covMat = projectDir + "coverageMatrix.txt",
@@ -160,3 +163,32 @@ rule jacusa_pileup:
             -a D -F 1024 \
             -A ")
 
+# parse all pileups
+rule parse_pileup:
+    input: 
+        projectDir + "{sample}/jacusa_multi_pileup.txt"
+    output:
+        projectDir + "{sample}/jacusa_multi_pileup_parsed.txt" 
+    params:
+        script = "scripts/parse_jacusa_pileup.R"
+    shell:
+        "ml {R_VERSION};"
+        "Rscript {params.script} --in {input} --out {output}"
+    
+# merge pileups
+# final annotation - flip allele orientation based on gene
+# any final filtering? sample missingness?
+rule merge_pileup:
+    input:
+        expand(projectDir + "{sample}/jacusa_multi_pileup_parsed.txt", sample = samples),
+        anno = projectDir + "editing_annotation.txt",
+        gencode = gencode
+    output:
+        projectDir + "all_sites_pileup_coverage.tsv.gz",
+        projectDir + "all_sites_pileup_editing.tsv.gz",
+        projectDir + "all_sites_pileup_annotation.tsv.gz"
+    params:
+        script = "" # TODO
+    shell:
+        "ml {R_VERSION};"
+        "Rscript {params.script} --inDir {projectDir} --gencode {gencode}"
