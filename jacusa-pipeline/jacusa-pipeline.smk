@@ -4,7 +4,7 @@
 
 R_VERSION = "R/4.0.3"
 jacusa_threads = 40
-annovar_threads = 12
+annovar_threads = 8
 import pandas as pd
 import os
 
@@ -12,7 +12,7 @@ import os
 refDir = config["refDir"]
 editingRefDir = config["editingRefDir"]
 humandbDir = config["humandbDir"]
-
+gencode = "/sc/arion/projects/ad-omics/data/references//hg38_reference/GENCODE/gencode.v38.primary_assembly/gencode.v38.primary_assembly.gene_strand.tsv.gz" # just gene_id, gene_name, and strand
 #data
 projectDir = config["projectDir"]
 metadata =  pd.read_csv(config["metadata"], sep = "\t")
@@ -21,7 +21,6 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 
 rule all:
     input:
-        projectDir + "ESannotations.txt",
         projectDir + "filtCoverageMatrix.txt",
         projectDir + "filtRatioMatrix.txt"
 
@@ -74,17 +73,13 @@ rule mergeSecondFiltering:
         ratioMat = projectDir + "ratioMatrix.txt",
         av = projectDir + "avinput.txt"
     params:
-        # changing mergeSecondFiltering.R to
-        # secondfiltering.R
         script = "scripts/secondfiltering.R",
-        # trying-> giving a full path
         inDir = projectDir,
         perc = 0.5,
         er = 0.1
     shell:
         "ml {R_VERSION};"
         "Rscript {params.script}"
-        # adding blank space " --inDir.."
         " --inDir {params.inDir}"
         " --rat {output.ratioMat}"
         " --cov {output.covMat}"
@@ -92,6 +87,7 @@ rule mergeSecondFiltering:
         " --percSamples {params.perc}"
         " --minER {params.er}"
 
+# annotate variants
 rule annovar:
     input:
         av = projectDir + "avinput.txt"
@@ -103,9 +99,11 @@ rule annovar:
     shell:
         "ml annovar;"
         "table_annovar.pl {input.av} {params.humandb} -buildver hg38"
+        #"-dbtype ensGene " # use Ensembl gene annotation
         " -out {params.outfile} -remove -protocol refGene,dbsnp153CommonSNV,"
         "gnomad30_genome,phastConsElements30way,rmsk,rediportal_012920"
-        " -operation g,f,f,r,r,f"
+        " -operation g,f,f,r,r,f "
+        " -arg '--neargene 10000',,,,, " # flank nearby genes by 10kb
         #" --argument ,,, \'--colsWanted 5\',\'--colsWanted 10&11&12\',"
         # the thread was changed from 10 to 4 
         " -nastring \'.\' --otherinfo --thread {annovar_threads} --maxGeneThread {annovar_threads}"
@@ -118,15 +116,17 @@ rule annovar:
         # unrecognized argument
         # --argument ,,, '--colsWanted 5','--colsWanted 10&11&12',
 
+# more filtering
 rule annovarFiltering:
     input:
         filtanno = projectDir + "myanno.hg38_multianno.txt",
         covMat = projectDir + "coverageMatrix.txt",
         ratioMat = projectDir + "ratioMatrix.txt"
     output:
-        ESanno = projectDir + "ESannotations.txt",
+        ESanno = projectDir + "editing_annotation.txt",
         filtCovMat = projectDir + "filtCoverageMatrix.txt",
-        filtRatioMat = projectDir + "filtRatioMatrix.txt"
+        filtRatioMat = projectDir + "filtRatioMatrix.txt",
+        outBed = projectDir + "editing_sites.bed"
     params:
         script = "scripts/annovarfiltering.R"
     shell:
@@ -138,3 +138,5 @@ rule annovarFiltering:
         " --outAnno {output.ESanno}"
         " --outRat {output.filtRatioMat}"
         " --outCov {output.filtCovMat}"
+        " --outBed {output.outBed}"
+        " --gencode {gencode}"
