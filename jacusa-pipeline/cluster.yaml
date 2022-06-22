@@ -14,12 +14,17 @@ annovar:
 jacusa:
     cores: 4
     mem: 3750
-    time: '360'
+    time: '720'
 jacusa_pileup:
     cores: 4
     mem: 3750
     time: '720'
-mergeSecondFiltering:
+merge_jacusa:
+    cores: 1
+    mem: 100000
+    time: '360'
+    himem: "-R himem"
+filter_cohort:
     cores: 1
     mem: 100000
     time: '360'

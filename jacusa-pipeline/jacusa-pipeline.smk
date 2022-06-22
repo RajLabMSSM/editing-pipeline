@@ -59,13 +59,13 @@ rule jacusa:
 # split multi-allelic sites
 # light filtering - total coverage at least 10 reads
 # at least 2 edited reads
-rule format_jacusa:
+rule parse_jacusa:
     input:
         inFile = projectDir + "{sample}/{sample}.out"
     output:
         outFile = projectDir + "{sample}/{sample}.filt"
     params:
-        script = "scripts/firstfiltering.R"
+        script = "scripts/parse_jacusa.R"
         
     shell:
         "ml {R_VERSION};"
@@ -87,8 +87,8 @@ rule merge_jacusa:
         "RScript {params.script} --inDir {projectDir} "
 
 
-# apply group filters
-rule filter_group:
+# apply cohort level filters
+rule filter_cohort:
     input:
         projectDir + "all_sites_coverage.tsv.gz",
         projectDir + "all_sites_ratio.tsv.gz"
@@ -97,7 +97,7 @@ rule filter_group:
         ratioMat = projectDir + "ratioMatrix.txt",
         av = projectDir + "avinput.txt"
     params:
-        script = "scripts/secondfiltering.R",
+        script = "scripts/filter_cohort.R",
         perc = min_coverage,
         er = min_edit_rate
     shell:
@@ -145,7 +145,7 @@ rule filter_annovar:
         filtRatioMat = projectDir + "filtRatioMatrix.txt",
         outBed = projectDir + "editing_sites.bed"
     params:
-        script = "scripts/annovarfiltering.R"
+        script = "scripts/filter_annovar.R"
     shell:
         "ml {R_VERSION};"
         "Rscript {params.script}"
@@ -168,7 +168,7 @@ rule jacusa_pileup:
         pu = projectDir + "{sample}/{sample}_pileup.txt",
         parsed = projectDir + "{sample}/{sample}_pileup_parsed.txt"
     params:
-        script = "scripts/parse_jacusa_pileup.R"
+        script = "scripts/parse_pileup.R"
     run:
         bam_file = os.path.join(metadata_dict[wildcards.sample]["bam_path"], wildcards.sample + ".bam")
         

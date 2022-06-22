@@ -26,22 +26,17 @@ annovar_out <- opt$av
 perc_samples <- opt$percSamples
 min_edrate <- opt$minER
 chromosome <- opt$chr
-#aggregating across samples
-#inDir <- "/sc/arion/projects/ad-omics/flora/cohorts/Navarro_stim/editing-pipeline/editing-pipeline/jacusa-pipeline/snakemake-workspace/"
-#path = inDir
-#print(path)
 
-#message("inDirectory") 
-#print(inDir)
 temp_cov <- paste0(inDir, "/all_sites_coverage.tsv.gz")
 temp_rat <- paste0(inDir, "/all_sites_ratio.tsv.gz")
 
-coverage_df <- read_tsv(temp_cov) %>% column_to_rownames("ESid")
-ratio_df <- read_tsv(temp_rat) %>% column_to_rownames("ESid")
+message(" * reading in coverage file")
+coverage_df <- vroom::vroom(temp_cov) %>% column_to_rownames("ESid")
+message(" * reading in ratio file")
+ratio_df <- vroom::vroom(temp_rat) %>% column_to_rownames("ESid")
 
 message(" * ", nrow(coverage_df), " sites found in total")
-#save.image("debug.RData")
-#stop()
+
 #cohort level-filtering: editing sites must validate across 50% of samples and have editing efficiency of at least 10% with default settings
 sample_n <- ceiling(length(files) * perc_samples) #where the --percSamples flag comes in
 
