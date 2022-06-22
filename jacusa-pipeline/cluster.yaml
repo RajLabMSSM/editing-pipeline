@@ -29,3 +29,8 @@ filter_cohort:
     mem: 100000
     time: '360'
     himem: "-R himem"
+merge_pileup:
+    cores: 1
+    mem: 12000
+    time: '720'
+    himem: "-R himem"

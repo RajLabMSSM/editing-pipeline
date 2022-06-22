@@ -22,8 +22,8 @@ samples = metadata['sample']
 metadata_dict = metadata.set_index('sample').T.to_dict()
 
 # variables - put these in config, experiment with relaxing
-min_coverage = 0.5
-min_edit_rate = 0.1 
+min_coverage = config["min_coverage"]
+min_edit_rate = config["min_edit_rate"]
 
 rule all:
     input:
