@@ -25,12 +25,14 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 min_coverage = 0.5
 min_edit_rate = 0.1 
 
-
 rule all:
     input:
-        projectDir + "filtCoverageMatrix.txt",
-        projectDir + "filtRatioMatrix.txt",
-        expand(projectDir + "{sample}/jacusa_multi_pileup.txt", sample = samples)
+        projectDir + "all_sites_pileup_coverage.tsv.gz",
+        projectDir + "all_sites_pileup_editing.tsv.gz",
+        projectDir + "all_sites_pileup_annotation.tsv.gz"
+        #projectDir + "filtCoverageMatrix.txt",
+        #projectDir + "filtRatioMatrix.txt" #,
+        #expand(projectDir + "{sample}/jacusa_multi_pileup.txt", sample = samples)
 
 # call RNA editing genome-wide
 # remove blacklist regions
@@ -66,32 +68,42 @@ rule format_jacusa:
         script = "scripts/firstfiltering.R"
         
     shell:
-        # sed -i (work inplace) # find all line that contains 'id' and delete that line. 
-        # without this line, running inputfile through Rscript works
-        #"sed -i '1d' {input.inFile};"
         "ml {R_VERSION};"
         "Rscript {params.script}"
-        #adding blank space " --input.."
         " --input {input.inFile}"
         " --output {output.outFile}"
 
-# merge files together
+# merge files together 
 rule merge_jacusa:
     input:
         expand(projectDir + "{sample}/{sample}.filt", sample = samples)
+    output:
+        projectDir + "all_sites_coverage.tsv.gz",
+        projectDir + "all_sites_ratio.tsv.gz"
+    params:
+        script = "scripts/merge_jacusa.R" 
+    shell:
+        "ml {R_VERSION};"
+        "RScript {params.script} --inDir {projectDir} "
+
+
+# apply group filters
+rule filter_group:
+    input:
+        projectDir + "all_sites_coverage.tsv.gz",
+        projectDir + "all_sites_ratio.tsv.gz"
     output:
         covMat = projectDir + "coverageMatrix.txt",
         ratioMat = projectDir + "ratioMatrix.txt",
         av = projectDir + "avinput.txt"
     params:
         script = "scripts/secondfiltering.R",
-        inDir = projectDir,
         perc = min_coverage,
         er = min_edit_rate
     shell:
         "ml {R_VERSION};"
         "Rscript {params.script}"
-        " --inDir {params.inDir}"
+        " --inDir {projectDir}"
         " --rat {output.ratioMat}"
         " --cov {output.covMat}"
         " --av {output.av}"
@@ -148,47 +160,39 @@ rule filter_annovar:
 
 # get counts of each filtered site in each sample
 
-# run jacusa with set of sites
+# run jacusa with set of sites to fill in missing data
 rule jacusa_pileup:
     input:
         bed = projectDir + "editing_sites.bed"
     output:
-        projectDir + "{sample}/jacusa_multi_pileup.txt"
+        pu = projectDir + "{sample}/{sample}_pileup.txt",
+        parsed = projectDir + "{sample}/{sample}_pileup_parsed.txt"
+    params:
+        script = "scripts/parse_jacusa_pileup.R"
     run:
         bam_file = os.path.join(metadata_dict[wildcards.sample]["bam_path"], wildcards.sample + ".bam")
         
         shell("ml jacusa2; java -jar $JACUSA2_JAR call-1 \
-            -r {output} -b {input.bed} {bam_file} \
+            -r {output.pu} -b {input.bed} {bam_file} \
             -p {jacusa_multi_threads}\
             -a D -F 1024 \
-            -A ")
+            -A; \
+            ml {R_VERSION};\
+            Rscript {params.script} --input {output.pu} --output {output.parsed}")
 
-# parse all pileups
-rule parse_pileup:
-    input: 
-        projectDir + "{sample}/jacusa_multi_pileup.txt"
-    output:
-        projectDir + "{sample}/jacusa_multi_pileup_parsed.txt" 
-    params:
-        script = "scripts/parse_jacusa_pileup.R"
-    shell:
-        "ml {R_VERSION};"
-        "Rscript {params.script} --in {input} --out {output}"
-    
 # merge pileups
 # final annotation - flip allele orientation based on gene
 # any final filtering? sample missingness?
 rule merge_pileup:
     input:
-        expand(projectDir + "{sample}/jacusa_multi_pileup_parsed.txt", sample = samples),
-        anno = projectDir + "editing_annotation.txt",
-        gencode = gencode
+        expand(projectDir + "{sample}/{sample}_pileup_parsed.txt", sample = samples),
+        anno = projectDir + "editing_annotation.txt"
     output:
         projectDir + "all_sites_pileup_coverage.tsv.gz",
         projectDir + "all_sites_pileup_editing.tsv.gz",
         projectDir + "all_sites_pileup_annotation.tsv.gz"
     params:
-        script = "" # TODO
+        script = "scripts/merge_pileup.R" 
     shell:
         "ml {R_VERSION};"
-        "Rscript {params.script} --inDir {projectDir} --gencode {gencode}"
+        "Rscript {params.script} --inDir {projectDir} --anno {input.anno} "

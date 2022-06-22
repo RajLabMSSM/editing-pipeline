@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-
+# filter ANNOVAR output
 library(optparse)
 library(dplyr)
 
@@ -40,6 +40,8 @@ anno_df <- anno_df %>% mutate(ESid = paste0(Chr, ":", Start, ":", Ref, ":", Alt)
 message( " * adding in GENCODE info")
 
 gencode_meta <- read_tsv(gencode)
+# remove duplicated gene names
+gencode_meta <- gencode_meta[ !duplicated(gencode_meta$gene_name),]
 
 anno_df <- left_join(anno_df, gencode_meta, by = c("Gene.refGene" = "gene_name" ) )
 
@@ -47,17 +49,6 @@ anno_df <- filter(anno_df, !is.na(strand) )
 
 message(" * keeping ", nrow(anno_df), " sites mapped to genes")
 
-
-# flip allele orientation if gene is on negative strand
-revcomp <- function(x){
-  data.frame(y = c("A","C","G","T"),row.names =  c("T","G","C","A"))[x,]
-}
-message(" * flipping orientations" )
-
-anno_df <- mutate(anno_df, 
-                  Ref = ifelse(!is.na(strand) & strand == "-", revcomp(Ref), Ref ),
-                  Alt = ifelse(!is.na(strand) & strand == "-", revcomp(Alt), Alt )
-                  )
 message( " * filtering coverage and ratio matrices")
 
 coverage_df <- read_tsv(covMatRaw) %>% column_to_rownames("ESid")

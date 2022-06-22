@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-
+# parse jacusa pileup - do not apply any filtering
 library(optparse)
 library(splitstackshape)
 library(dplyr)
@@ -52,7 +52,6 @@ df_long <- df %>% pivot_longer(!c(chrpos, ref, score, ref_cov, total_cov), names
 # remove rows where ref & alt are the same
 df_long <- filter(df_long, ref != alt) #& alt_cov > 0)
 
-#require editing site to be covered by >=10 (default) reads and >=2 (defaul) reads covering the edited allele
 df_filt <- 
     df_long %>%
     filter(total_cov >= siteDepth & alt_cov >= altDepth) %>%
