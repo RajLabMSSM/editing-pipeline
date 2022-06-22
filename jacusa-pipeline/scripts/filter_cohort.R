@@ -38,7 +38,7 @@ ratio_df <- vroom::vroom(temp_rat) %>% column_to_rownames("ESid")
 message(" * ", nrow(coverage_df), " sites found in total")
 
 #cohort level-filtering: editing sites must validate across 50% of samples and have editing efficiency of at least 10% with default settings
-sample_n <- ceiling(length(files) * perc_samples) #where the --percSamples flag comes in
+sample_n <- ceiling(ncol(coverage_df) * perc_samples) #where the --percSamples flag comes in
 
 coverage_df_filt <- coverage_df[which(rowSums(!is.na(coverage_df)) >= sample_n),]
 

@@ -84,7 +84,7 @@ rule merge_jacusa:
         script = "scripts/merge_jacusa.R" 
     shell:
         "ml {R_VERSION};"
-        "RScript {params.script} --inDir {projectDir} "
+        "Rscript {params.script} --inDir {projectDir} "
 
 
 # apply cohort level filters
