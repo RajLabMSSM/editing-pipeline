@@ -25,6 +25,8 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 min_coverage = config["min_coverage"]
 min_edit_rate = config["min_edit_rate"]
 
+chromosomes = ["chr" + str(i) for i in range(1,23) ] + ["chrX", "chrY"]
+
 rule all:
     input:
         projectDir + "all_sites_pileup_coverage.tsv.gz",
@@ -78,24 +80,23 @@ rule merge_jacusa:
     input:
         expand(projectDir + "{sample}/{sample}.filt", sample = samples)
     output:
-        projectDir + "all_sites_coverage.tsv.gz",
-        projectDir + "all_sites_ratio.tsv.gz"
+        projectDir + "merge/{chrom}_coverage.tsv.gz",
+        projectDir + "merge/{chrom}_ratio.tsv.gz"
     params:
         script = "scripts/merge_jacusa.R" 
     shell:
         "ml {R_VERSION};"
-        "Rscript {params.script} --inDir {projectDir} "
+        "Rscript {params.script} --inDir {projectDir} --chr {wildcards.chrom} "
 
 
 # apply cohort level filters
 rule filter_cohort:
     input:
-        projectDir + "all_sites_coverage.tsv.gz",
-        projectDir + "all_sites_ratio.tsv.gz"
+        projectDir + "merge/{chrom}_coverage.tsv.gz",
+        projectDir + "merge/{chrom}_ratio.tsv.gz"
     output:
-        covMat = projectDir + "coverageMatrix.txt",
-        ratioMat = projectDir + "ratioMatrix.txt",
-        av = projectDir + "avinput.txt"
+        covMat = projectDir + "filter/{chrom}_coverage.tsv.gz",
+        ratMat = projectDir + "filter/{chrom}_ratio.tsv.gz"
     params:
         script = "scripts/filter_cohort.R",
         perc = min_coverage,
@@ -104,12 +105,27 @@ rule filter_cohort:
         "ml {R_VERSION};"
         "Rscript {params.script}"
         " --inDir {projectDir}"
-        " --rat {output.ratioMat}"
-        " --cov {output.covMat}"
-        " --av {output.av}"
+        " --chr {wildcards.chrom} "
         " --percSamples {params.perc}"
         " --minER {params.er}"
 
+# concatenate filtered chunks together
+# write out VCF format for ANNOVAR
+rule concatenate_cohort:
+    input:
+        expand(projectDir + "filter/{chrom}_coverage.tsv.gz", chrom = chromosomes),
+        expand(projectDir + "filter/{chrom}_ratio.tsv.gz", chrom = chromosomes)
+    output:
+        cov = projectDir + "all_sites_coverage.tsv.gz",
+        rat = projectDir + "all_sites_ratio.tsv.gz",
+        av = projectDir + "avinput.txt" 
+    params:
+        script = "scripts/concatenate_cohort.R"
+    shell:
+        "ml {R_VERSION};"
+        "Rscript {params.script} "
+        " --inDir {projectDir} "
+        
 # annotate variants
 # look into using GENCODE instead of refGene at some point
 rule annovar:
@@ -137,8 +153,8 @@ rule annovar:
 rule filter_annovar:
     input:
         filtanno = projectDir + "myanno.hg38_multianno.txt",
-        covMat = projectDir + "coverageMatrix.txt",
-        ratioMat = projectDir + "ratioMatrix.txt"
+        cov = projectDir + "all_sites_coverage.tsv.gz",
+        rat = projectDir + "all_sites_ratio.tsv.gz"
     output:
         ESanno = projectDir + "editing_annotation.txt",
         filtCovMat = projectDir + "filtCoverageMatrix.txt",
@@ -150,8 +166,8 @@ rule filter_annovar:
         "ml {R_VERSION};"
         "Rscript {params.script}"
         " --inAnno {input.filtanno}"
-        " --inRat {input.ratioMat}"
-        " --inCov {input.covMat}"
+        " --inRat {input.rat}"
+        " --inCov {input.cov}"
         " --outAnno {output.ESanno}"
         " --outRat {output.filtRatioMat}"
         " --outCov {output.filtCovMat}"

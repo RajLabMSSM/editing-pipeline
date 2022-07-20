@@ -24,17 +24,27 @@ jacusa_pileup:
     mem: 3750
     time: '720'
 merge_jacusa:
+    queue: "premium"
     cores: 1
     mem: 100000
-    time: '360'
+    time: '1440'
     himem: "-R himem"
 filter_cohort:
     cores: 1
-    mem: 100000
+    mem: 150000
     time: '360'
     himem: "-R himem"
+filter_annovar:
+    cores: 1
+    mem: 50000
+    time: '360'
 merge_pileup:
     cores: 1
-    mem: 12000
+    mem: 50000
     time: '720'
+    himem: "-R himem"
+concatenate_cohort:
+    cores: 1
+    mem: 50000
+    time: '360'
     himem: "-R himem"
