@@ -7,6 +7,7 @@ library(tidyverse)
 
 option_list <- list(make_option(c('--input'), help = '', default = ''),
                     make_option(c('--output'), help = '', default = ''),
+                    make_option(c('--minRate'), help = '', default = 0.01, 'minimum editing rate'),
                     make_option(c('--altDepth'), default = 2, help = 'required read coverage for alternative allele'),
                     make_option(c('--siteDepth'), default = 10, help = 'required read coverage of the locus'))
 
@@ -17,6 +18,7 @@ input <- opt$input
 output <- opt$output
 altDepth <- opt$altDepth
 siteDepth <- opt$siteDepth
+minRate <- opt$minRate
 sampleFile <- basename(input)
 sampleID <- gsub(".out", "", sampleFile)
 
@@ -60,6 +62,7 @@ df_filt <-
         ESid = paste0(chrpos, ":", ref, ":", alt),
         edit_rate = alt_cov / total_cov 
         ) %>% 
+    filter(edit_rate >= minRate) %>%
     separate(col = chrpos, into = c("chr", "pos"), sep = ":") %>%
     select(ESid, chr, pos, score, total_cov, ref_cov, alt_cov, edit_rate)
 

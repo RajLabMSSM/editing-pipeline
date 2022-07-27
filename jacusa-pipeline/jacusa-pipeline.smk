@@ -61,6 +61,7 @@ rule jacusa:
 # split multi-allelic sites
 # light filtering - total coverage at least 10 reads
 # at least 2 edited reads
+# minimum editing rate > 0.01
 rule parse_jacusa:
     input:
         inFile = projectDir + "{sample}/{sample}.out"
