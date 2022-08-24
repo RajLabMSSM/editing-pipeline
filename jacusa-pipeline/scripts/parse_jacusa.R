@@ -7,7 +7,7 @@ library(tidyverse)
 
 option_list <- list(make_option(c('--input'), help = '', default = ''),
                     make_option(c('--output'), help = '', default = ''),
-                    make_option(c('--minRate'), help = '', default = 0.01, 'minimum editing rate'),
+                    make_option(c('--minRate'), default = 0.01, help = 'minimum editing rate'),
                     make_option(c('--altDepth'), default = 2, help = 'required read coverage for alternative allele'),
                     make_option(c('--siteDepth'), default = 10, help = 'required read coverage of the locus'))
 
