@@ -24,6 +24,7 @@ metadata_dict = metadata.set_index('sample').T.to_dict()
 # variables - put these in config, experiment with relaxing
 min_coverage = config["min_coverage"]
 min_edit_rate = config["min_edit_rate"]
+filter_missing = 0.75
 
 chromosomes = ["chr" + str(i) for i in range(1,23) ] + ["chrX", "chrY"]
 
@@ -212,4 +213,4 @@ rule merge_pileup:
         script = "scripts/merge_pileup.R" 
     shell:
         "ml {R_VERSION};"
-        "Rscript {params.script} --inDir {projectDir} --anno {input.anno} "
+        "Rscript {params.script} --inDir {projectDir} --anno {input.anno} --filter_missing {filter_missing} "

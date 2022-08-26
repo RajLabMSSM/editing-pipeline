@@ -9,13 +9,15 @@ library(dplyr)
 library(tidyverse)
 
 option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
-                    make_option(c('--anno'), help = 'The site annotation following annovar', default = ''))
+                    make_option(c('--anno'), help = 'The site annotation following annovar', default = ''),
+                    make_option(c('--filter_missing'), help = "proportion of samples with coverage to enforce", default = 0) )
 
 option.parser <- OptionParser(option_list = option_list)
 opt <- parse_args(option.parser)
 
 inDir <- opt$inDir
 anno_file <- opt$anno
+filter_missing <- as.numeric(opt$filter_missing)
 
 anno_out <- paste0(inDir,"all_sites_pileup_annotation.tsv.gz")
 cov_out <- paste0(inDir, "all_sites_pileup_coverage.tsv.gz")
@@ -28,12 +30,12 @@ stopifnot( nrow(anno_df) == length(unique(anno_df$ESid) ) )
 
 # sites are ordered by appearance in annotation
 all_sites <- anno_df$ESid
-
+row.names(anno_df) <- all_sites
 files <- list.files(path = inDir, pattern = "*pileup_parsed.txt$",full.names = TRUE, recursive = TRUE)
 
 message(" * found ", length(files) , " jacusa pileup files")
 # testing
-files <- head(files, 10)
+#files <- head(files, 10)
 
 message(" * reading files")
 sample_ids <- gsub("_pileup_parsed.txt", "", basename(files) )
@@ -86,6 +88,19 @@ dtu_df <- map2(joint_sites, sample_ids, ~{
 
 dtu_df <- cbind(dtu_cols, dtu_df)
 
+## missingness - remove all sites with >25% NA values
+if( filter_missing > 0 ){
+    clean_sites <- rowSums( !is.na(coverage_df) ) >= filter_missing * ncol(coverage_df)
+
+    message(" * keeping ", sum(clean_sites), " sites with low missingness")
+
+    ratio_df <- ratio_df[ clean_sites,]
+    coverage_df <- coverage_df[clean_sites,]
+
+    dtu_df <- filter(dtu_df, ESid %in% row.names(coverage_df) )
+
+    anno_df <- anno_df[clean_sites,]
+}
 
 ratio_df <- rownames_to_column(ratio_df, "ESid")
 coverage_df <- rownames_to_column(coverage_df, "ESid")
@@ -108,6 +123,7 @@ ratio_df$ESid <- anno_df$ESid2
 
 dtu_df$ESid <- anno_df$ESid2[match(dtu_df$ESid, anno_df$ESid)]
 dtu_df$allele <- paste0(dtu_df$ESid, ":", dtu_df$allele)
+
 
 # write out
 write_tsv(coverage_df, file = cov_out)
