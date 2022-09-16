@@ -7,44 +7,64 @@ __default__:
     output: logs/{rule}:{wildcards}.stdout
     error: logs/{rule}:{wildcards}.stderr
     himem: ""
-annovar:
-    cores: 12
-    mem: 3750
-    time: '720'
 jacusa:
     cores: 4
     mem: 3750
+    time: '720'
+known_sites:
+    cores: 8
+    mem: 10000
     time: '720'
 parse_jacusa:
     cores: 1
     mem: 10000
     time: '360'
-jacusa_pileup:
-    cores: 4
-    mem: 3750
+parse_known:
+    cores: 1
+    mem: 14000
     time: '720'
+cat_all_sites:
+    cores: 1
+    mem: 10000
+    time: '360'
 merge_jacusa:
     queue: "premium"
     cores: 1
     mem: 100000
     time: '1440'
     himem: "-R himem"
+jacusa_pileup:
+    cores: 10
+    mem: 14000
+    time: '720'
 filter_cohort:
     cores: 1
     mem: 150000
     time: '360'
     himem: "-R himem"
+concatenate_cohort:
+    cores: 1
+    mem: 100000
+    time: '360'
+    himem: "-R himem"
+annovar:
+    cores: 12
+    mem: 8000
+    time: '720'
 filter_annovar:
     cores: 1
     mem: 50000
     time: '360'
+jacusa_pileup:
+    cores: 12
+    mem: 14000
+    time: '720'
+parse_pileup:
+    cores: 1
+    mem: 14000
+    time: '720'
 merge_pileup:
     cores: 1
-    mem: 100000
-    time: '720'
-    himem: "-R himem"
-concatenate_cohort:
-    cores: 1
     mem: 50000
-    time: '360'
+    time: '720'
     himem: "-R himem"

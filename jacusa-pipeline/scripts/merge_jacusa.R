@@ -8,10 +8,8 @@ library(purrr)
 library(dplyr)
 library(tidyverse)
 
-option_list <- list(
-    make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
-    make_option(c('--chr'), help = 'The chromosome being analysed', default = '') 
-)
+option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
+                    make_option(c('--chr'), help = 'The chromosome being analysed', default = ''))
 
 option.parser <- OptionParser(option_list = option_list)
 opt <- parse_args(option.parser)
@@ -19,25 +17,18 @@ opt <- parse_args(option.parser)
 inDir <- opt$inDir
 coverage_df_out <- opt$cov
 ratio_df_out <- opt$rat
-annovar_out <- opt$av
-perc_samples <- opt$percSamples
-min_edrate <- opt$minER
 chrom <- opt$chr
 
 #aggregating across samples
-
 temp_cov <- paste0(inDir, "/merge/", chrom, "_coverage.tsv.gz")
 temp_rat <- paste0(inDir, "/merge/", chrom, "_ratio.tsv.gz")
 
-files <- list.files(path = inDir, pattern = "*.filt$",full.names = TRUE, recursive = TRUE)
-
+files <- list.files(path = inDir, pattern = "*.filtAll$",full.names = TRUE, recursive = TRUE)
 
 message(" * found ", length(files) , " jacusa files")
 
 message(" * reading files")
-sample_ids <- gsub(".filt", "", basename(files) )
-
-#chroms <- paste0("chr", c(1:22, "X","Y","M") )
+sample_ids <- gsub(".filtAll", "", basename(files) )
 
 # read in all files together as list
 # use awk magic
@@ -48,14 +39,6 @@ read_chrom <- function(file, chr){
 }
 
 data <- map(files, read_chrom, chr = chrom)
-
-
-#data <-  map(files,~{
-#        read_tsv(.x, col_types = "ccnnnnnn") %>%
-#        filter(chr == chrom)
-#    })
-
-
 
 # iterate through chromosomes
 #for(chromosome in chroms){
@@ -75,7 +58,6 @@ data <- map(files, read_chrom, chr = chrom)
 
 # coverage matrix - total site coverage in each sample 
     joint_sites <- map2(data, sample_ids, ~{
-#    print(.y)
         .x$ESid <- as.character(.x$ESid)
         left_join(data.frame(ESid = all_sites), .x, by = "ESid") %>%
         select(ESid, total_cov, edit_rate)
