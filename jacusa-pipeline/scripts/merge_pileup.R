@@ -10,14 +10,16 @@ library(tidyverse)
 
 option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
                     make_option(c('--anno'), help = 'The site annotation following annovar', default = ''),
-                    make_option(c('--filter_missing'), help = "proportion of samples with coverage to enforce", default = 0) )
+                    make_option(c('--missing_samples'), help = "proportion of samples with coverage to enforce", default = 0),
+                    make_option(c('--missing_sites'), help = "proportion of sites with coverage to enforce", default = 0) )
 
 option.parser <- OptionParser(option_list = option_list)
 opt <- parse_args(option.parser)
 
 inDir <- opt$inDir
 anno_file <- opt$anno
-filter_missing <- as.numeric(opt$filter_missing)
+filter_missing_sites <- as.numeric(opt$missing_sites)
+filter_missing_samples <- as.numeric(opt$missing_samples)
 
 anno_out <- paste0(inDir,"all_sites_pileup_annotation.tsv.gz")
 cov_out <- paste0(inDir, "all_sites_pileup_coverage.tsv.gz")
@@ -31,19 +33,17 @@ stopifnot( nrow(anno_df) == length(unique(anno_df$ESid) ) )
 # sites are ordered by appearance in annotation
 all_sites <- anno_df$ESid
 row.names(anno_df) <- all_sites
-files <- list.files(path = inDir, pattern = "*pileup_parsed.txt$",full.names = TRUE, recursive = TRUE)
+files <- list.files(path = inDir, pattern = "*pileup.parsed.txt$",full.names = TRUE, recursive = TRUE)
 
 message(" * found ", length(files) , " jacusa pileup files")
-# testing
-#files <- head(files, 10)
 
 message(" * reading files")
-sample_ids <- gsub("_pileup_parsed.txt", "", basename(files) )
+sample_ids <- gsub(".pileup.parsed.txt", "", basename(files) )
 
 # read in all files together as list
 all_data <-  map(files,~{
-        read_tsv(.x, col_types = "ccnnnnnn")
-    })
+  read_tsv(.x, col_types = "ccnnnnnn")
+})
 
 names(all_data) <- sample_ids
 
@@ -53,53 +53,56 @@ message(" * merging ", length(all_sites), " unique sites")
 
 # coverage matrix - total site coverage in each sample 
 joint_sites <- map(all_data, ~{
-    left_join(data.frame(ESid = all_sites), distinct(.x), by = "ESid")
-    })
+  left_join(data.frame(ESid = all_sites), distinct(.x), by = "ESid")
+})
 
 ## now just extract columns and bind - no fancy join needed
 coverage_df <- map2(joint_sites, sample_ids, ~{
-    d <- select(.x, total_cov)
-    names(d)[1] <- .y
-    return(d)
+  d <- select(.x, total_cov)
+  names(d)[1] <- .y
+  return(d)
 }) %>% reduce(cbind)
 
 row.names(coverage_df) <- all_sites
 
 ratio_df <- map2(joint_sites, sample_ids, ~{
-        d <- select(.x, edit_rate)
-        names(d)[1] <- .y
-        return(d)
+  d <- select(.x, edit_rate)
+  names(d)[1] <- .y
+  return(d)
 }) %>% reduce(cbind)
 row.names(ratio_df) <- all_sites
 
 # making DTU matrix
 # make first two cols - ESid and allele
 dtu_cols <- data.frame(ESid = all_sites, ref = 1, alt = 1) %>%
-        pivot_longer(col = -ESid, names_to = "allele", values_to = "value") %>%
-        select(-value)
+  pivot_longer(col = -ESid, names_to = "allele", values_to = "value") %>%
+  select(-value)
 
 # get out coverage for ref and alt
 dtu_df <- map2(joint_sites, sample_ids, ~{
-        d <- select(.x, ESid, ref = ref_cov, alt = alt_cov) %>%
-            pivot_longer(col = -c(ESid), names_to = "allele", values_to = "sample")
-        names(d)[3] <- .y
-        return(d[,3])
+  d <- select(.x, ESid, ref = ref_cov, alt = alt_cov) %>%
+    pivot_longer(col = -c(ESid), names_to = "allele", values_to = "sample")
+  names(d)[3] <- .y
+  return(d[,3])
 }) %>% reduce(cbind)
 
 dtu_df <- cbind(dtu_cols, dtu_df)
 
-## missingness - remove all sites with >25% NA values
-if( filter_missing > 0 ){
-    clean_sites <- rowSums( !is.na(coverage_df) ) >= filter_missing * ncol(coverage_df)
+## missingness - drop samples and sites with high % of NA values (exact proportion set in config)
+if( filter_missing_sites > 0 ){
+  keep_samples <- colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]
+  clean_sites <- rowSums( !is.na(coverage_df) ) >= filter_missing_sites * ncol(coverage_df)
+  message(" * keeping ", length(keep_samples), " samples with low missingness")
+  message(" * keeping ", length(clean_sites), " sites with low missingness")
 
-    message(" * keeping ", sum(clean_sites), " sites with low missingness")
-
-    ratio_df <- ratio_df[ clean_sites,]
-    coverage_df <- coverage_df[clean_sites,]
-
-    dtu_df <- filter(dtu_df, ESid %in% row.names(coverage_df) )
-
-    anno_df <- anno_df[clean_sites,]
+  ratio_df <- ratio_df[clean_sites,keep_samples]
+  coverage_df <- coverage_df[clean_sites,keep_samples]
+  
+  dtu_df1 <- dtu_df[clean_sites,1:2]
+  dtu_dfSamples <- dtu_df[clean_sites,3:292]
+  dtu_dfSamples <- dtu_dfSamples[,keep_samples]
+  dtu_df <- cbind(dtu_df1, dtu_dfSamples)
+  
 }
 
 ratio_df <- rownames_to_column(ratio_df, "ESid")
@@ -114,7 +117,7 @@ message(" * flipping orientations" )
 anno_df <- mutate(anno_df,
                   Ref = ifelse(!is.na(strand) & strand == "-", revcomp(Ref), Ref ),
                   Alt = ifelse(!is.na(strand) & strand == "-", revcomp(Alt), Alt )
-                  )
+)
 # update ESids on annotation, coverage and ratio matrices
 anno_df <- anno_df %>% mutate(ESid2 = paste0(Chr, ":", Start, ":", Ref, ":", Alt))
 
@@ -131,5 +134,3 @@ write_tsv(ratio_df, file = rat_out)
 write_tsv(anno_df, file = anno_out)
 write_tsv(dtu_df, file = dtu_out)
 
-#ml R
-#Rscript merge_pileup.R --inDir BI_MyND_results/results  --anno BI_MyND_results/results/+"dtu_tsv."

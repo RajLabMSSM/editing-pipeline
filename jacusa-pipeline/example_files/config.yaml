@@ -1,0 +1,12 @@
+metadata : "/sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/files/ALLsamples.txt"
+projectDir: "/sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/"
+refDir : "/sc/arion/projects/ad-omics/data/references/GRCh38_references/"
+editingRefDir : "/sc/arion/projects/ad-omics/data/references/editing/"
+humandbDir: "/sc/arion/projects/ad-omics/data/references/editing/humandb/"
+gencodeDir: "/sc/arion/projects/ad-omics/data/references//hg38_reference/GENCODE/gencode.v38.primary_assembly/"
+
+# play with coverage settings for merging
+min_coverage: 40 # min number of samples in each group that site should be found in - used in filter_cohort 
+min_edit_rate: 0.1 # min mean editing rate - used in filter_cohort
+site_missingness: 0.75 # used in merge_pileup
+sample_missingness: 0.5 # used in merge_pileup

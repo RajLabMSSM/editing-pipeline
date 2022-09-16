@@ -18,7 +18,7 @@ output <- opt$output
 altDepth <- opt$altDepth
 siteDepth <- opt$siteDepth
 sampleFile <- basename(input)
-sampleID <- gsub(".out", "", sampleFile)
+sampleID <- gsub(".pileup.txt", "", sampleFile)
 
 message("Loading Jacusa2 output from ",input)
 if (!file.exists(input)) stop("File ",input," does not exist")
@@ -50,10 +50,14 @@ message(" * ", nrow(df), " sites loaded")
 # pivot
 df_long <- df %>% pivot_longer(!c(chrpos, ref, score, ref_cov, total_cov), names_to = "alt", values_to = "alt_cov") 
 # remove rows where ref & alt are the same
-df_long <- filter(df_long, ref != alt) #& alt_cov > 0)
+# rows where alt_cov=0 are kept here but considered by missingness filter later on
+df_long <- filter(df_long, ref != alt)
+#sort first and for multiallelic sites only keep site with top alt coverage
+df_long2 <- df_long[order(df_long$chrpos, -abs(df_long$"alt_cov") ), ]
+df_long3 <- df_long2[!duplicated(df_long2$chrpos), ]
 
 df_filt <- 
-    df_long %>%
+    df_long3 %>%
     filter(total_cov >= siteDepth & alt_cov >= altDepth) %>%
     mutate( 
         ESid = paste0(chrpos, ":", ref, ":", alt),
