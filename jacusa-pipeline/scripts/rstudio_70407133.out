@@ -1,0 +1,116 @@
+Sender: LSF System <lsfadmin@lh05g07>
+Subject: Job 70407133: <rstudio> in cluster <chimera> Exited
+
+Job <rstudio> was submitted from host <li03c04> by user <egglel01> in cluster <chimera> at Fri Aug 26 13:06:55 2022
+Job was executed on host(s) <lh05g07>, in queue <premium>, as user <egglel01> in cluster <chimera> at Fri Aug 26 13:06:56 2022
+</hpc/users/egglel01> was used as the home directory.
+</sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run5/scripts> was used as the working directory.
+Started at Fri Aug 26 13:06:56 2022
+Terminated at Fri Aug 26 14:28:07 2022
+Results reported at Fri Aug 26 14:28:07 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+
+## Auto generated script for rstudio web job.
+
+#BSUB -J rstudio
+#BSUB -n 1
+#BSUB -P acc_als-omics
+#BSUB -q premium 
+#BSUB -W 144:00
+#BSUB -R "rusage[mem=8000] span[hosts=1]"
+#BSUB -oo rstudio_%J.out
+#BSUB -eo rstudio_%J.err
+
+
+# Set up proxy
+export http_proxy=http://172.28.7.1:3128
+export https_proxy=http://172.28.7.1:3128
+export all_proxy=http://172.28.7.1:3128
+export no_proxy=localhost,*.hpc.mssm.edu,*.chimera.hpc.mssm.edu,172.28.0.0/16
+
+
+module load singularity/3.6.4
+
+# remote host li03c03
+remote_host="10.95.46.103"
+
+# set remote port to be 5+last 4 digit of jobid. $LSB_JOBID
+# TODO: God bless it works. But it will be nice to check first. 
+remote_port="5$(echo $LSB_JOBID|cut -c 5-)"
+
+image=/sc/arion/projects/als-omics/rstudio_server/singularity-rstudio_r403_centos7.simg
+
+##Lili Gai changed the lockfiles
+##lockfiles="/tmp/rstudio-rsession /tmp/rstudio-server /tmp/revocation-list"
+lockfiles="/tmp/egglel01_RStUDiIo" 
+
+for lf in $lockfiles;
+do
+	if [[ -d $lf ]];
+	then
+		owner=$(stat -c "%U" $lf)
+		if [[ $USER != $owner ]];
+		then
+			echo "Lockfiles $lf belongs to $owner, rstudio session on $hostname is blocked, cannot clean. Abort..."
+			echo "Please resubmit your job to get your job dispatched to another node. "
+			echo "Change your arguments like -n -M -W slightly."
+			exit 1;
+		else
+			rm -rf $lf
+			echo "Lock cleaned"
+
+(... more ...)
+------------------------------------------------------------
+
+TERM_OWNER: job killed by owner.
+Exited with signal termination: 14.
+
+Resource usage summary:
+
+    CPU time :                                   21.00 sec.
+    Max Memory :                                 1054 MB
+    Average Memory :                             884.30 MB
+    Total Requested Memory :                     8000.00 MB
+    Delta Memory :                               6946.00 MB
+    Max Swap :                                   -
+    Max Processes :                              8
+    Max Threads :                                24
+    Run time :                                   4871 sec.
+    Turnaround time :                            4872 sec.
+
+The output (if any) follows:
+
+Using local available port 8788
+Using password in /hpc/users/egglel01/minerva_jobs/rstudio_jobs/.rstudio_onthefly_password
+RStudio started in the singularity container with PID 28129.
+Making sure it is alive
+Checking 3, next check in 5 seconds.
+  PID TTY          TIME CMD
+28129 ?        00:00:00 singularity
+Checking 2, next check in 5 seconds.
+  PID TTY          TIME CMD
+28129 ?        00:00:00 starter-suid
+Checking 1, next check in 5 seconds.
+  PID TTY          TIME CMD
+28129 ?        00:00:00 starter-suid
+
+SSH port forwarding to 10.95.46.103 with PID 28281.
+
+Rstudio is started on compute node lh05g07, port 8788
+
+Access the RStudio Web using your web browser: [34;3m http://10.95.46.103:57133 [0m
+
+Job is ending, cleaning up session.
+Removing lockfile /tmp/egglel01_RStUDiIo
+Job is ending, cleaning up session.
+
+
+PS:
+
+Read file <rstudio_70407133.err> for stderr output of this job.
+
