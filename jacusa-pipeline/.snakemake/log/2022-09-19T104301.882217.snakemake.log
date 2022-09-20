@@ -1,4 +1,0 @@
-File path /sc/arion/projects/ad-omics/data/references//hg38_reference/GENCODE/gencode.v38.primary_assembly/gencode.v38.primary_assembly.gene_strand.tsv.gz contains double '/'. This is likely unintended. It can also lead to inconsistent results of the file-matching approach used by Snakemake.
-Error: Directory cannot be locked. Please make sure that no other Snakemake process is trying to create the same files in the following directory:
-/sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline
-If you are sure that no other instances of snakemake are running on this directory, the remaining lock was likely caused by a kill signal or a power loss. It can be removed with the --unlock argument.
