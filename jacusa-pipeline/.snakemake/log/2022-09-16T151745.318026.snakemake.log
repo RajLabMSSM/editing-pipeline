@@ -1,0 +1,20 @@
+File path /sc/arion/projects/ad-omics/data/references//hg38_reference/GENCODE/gencode.v38.primary_assembly/gencode.v38.primary_assembly.gene_strand.tsv.gz contains double '/'. This is likely unintended. It can also lead to inconsistent results of the file-matching approach used by Snakemake.
+Job stats:
+job                   count    min threads    max threads
+------------------  -------  -------------  -------------
+all                       1              1              1
+annovar                   1              1              1
+cat_all_sites           290              1              1
+concatenate_cohort        1              1              1
+filter_annovar            1              1              1
+filter_cohort            24              1              1
+jacusa                  290              1              1
+jacusa_pileup           290              1              1
+known_sites             290              1              1
+merge_jacusa             24              1              1
+merge_pileup              1              1              1
+parse_jacusa            290              1              1
+parse_known             290              1              1
+parse_pileup            290              1              1
+total                  2083              1              1
+

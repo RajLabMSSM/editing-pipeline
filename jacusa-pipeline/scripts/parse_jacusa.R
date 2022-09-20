@@ -8,7 +8,7 @@ library(tidyverse)
 option_list <- list(make_option(c('--input'), help = '', default = ''),
                     make_option(c('--output'), help = '', default = ''),
                     make_option(c('--minRate'), default = 0.01, help = 'minimum editing rate'),
-                    make_option(c('--altDepth'), default = 2, help = 'required read coverage for alternative allele'),
+                    make_option(c('--altDepth'), default = 3, help = 'required read coverage for alternative allele'),
                     make_option(c('--siteDepth'), default = 10, help = 'required read coverage of the locus'))
 
 option.parser <- OptionParser(option_list = option_list)
@@ -53,10 +53,13 @@ message(" * ", nrow(df), " sites loaded")
 df_long <- df %>% pivot_longer(!c(chrpos, ref, score, ref_cov, total_cov), names_to = "alt", values_to = "alt_cov") 
 # remove rows where ref & alt are the same, remove alt with 0 coverage
 df_long <- filter(df_long, ref != alt & alt_cov > 0)
+#sort first and for multiallelic sites only keep site with top alt coverage
+df_long2 <- df_long[order(df_long$chrpos, -abs(df_long$"alt_cov") ), ]
+df_long3 <- df_long2[!duplicated(df_long2$chrpos), ]
 
-#require editing site to be covered by >=10 (default) reads and >=2 (defaul) reads covering the edited allele
+#require editing site to be covered by >=10 (default) reads and >=3 (default) reads covering the edited allele
 df_filt <- 
-    df_long %>%
+    df_long3 %>%
     filter(total_cov >= siteDepth & alt_cov >= altDepth) %>%
     mutate( 
         ESid = paste0(chrpos, ":", ref, ":", alt),

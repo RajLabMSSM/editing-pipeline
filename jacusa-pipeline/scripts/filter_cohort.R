@@ -7,68 +7,87 @@ library(optparse)
 library(purrr)
 library(dplyr)
 library(tidyverse)
+library(vroom)
 
 option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
-                    #make_option(c('--rat'), help = 'Name of the ratio matrix output file', default = ''),
-                    #make_option(c('--cov'), help = 'Name of the coverage matrix output file', default = ''),
                     make_option(c('--chr'), help = 'the chromosome to work on', default = 'chr21'),
-                    make_option(c('--av'), help = 'Name of the vcf file for annotation in annovar', default = ''),
-                    make_option(c('--percSamples'), default = 0.5, help = '% of samples editing site is required to validate across'),
-                    make_option(c('--minER'), default = 0.1, help = 'minimum editing ratio'))
+                    make_option(c('--minSamples'), default = 60, help = '# of samples editing site is required to validate across'),
+                    make_option(c('--minER'), default = 0.1, help = 'minimum editing ratio'),
+                    make_option(c('--group'), help = 'metadata file', default = ''))
 
 option.parser <- OptionParser(option_list = option_list)
 opt <- parse_args(option.parser)
 
 inDir <- opt$inDir
-#coverage_df_out <- opt$cov
-#ratio_df_out <- opt$rat
-annovar_out <- opt$av
-perc_samples <- opt$percSamples
+minSampleN <- opt$minSamples
 min_edrate <- opt$minER
 chrom <- opt$chr
-
-#temp_cov <- paste0(inDir, "/all_sites_coverage.tsv.gz")
-#temp_rat <- paste0(inDir, "/all_sites_ratio.tsv.gz")
-#projectDir + "merge/{chrom}_coverage.tsv.gz"
-cov_in <- paste0(inDir, "/merge/", chrom, "_coverage.tsv.gz")
-rat_in <- paste0(inDir, "/merge/", chrom, "_ratio.tsv.gz") 
+group <- opt$group
 
 cov_out <- paste0(inDir, "/filter/", chrom, "_coverage.tsv.gz")
 rat_out <- paste0(inDir, "/filter/", chrom, "_ratio.tsv.gz")
 
-
+#cohort level-filtering: within a defined group, editing sites must validate across 60 samples and have mean editing efficiency of at least 10% with default settings
 message(" * reading in coverage file")
-coverage_df <- vroom::vroom(cov_in) %>% column_to_rownames("ESid")
+cov_in <- read_tsv(paste0(inDir, "/merge/", chrom, "_coverage.tsv.gz"), col_names = T)
+coverage_df <- as.data.frame(cov_in)
+rownames(coverage_df) <- cov_in$ESid
+coverage_df <- select(coverage_df, -ESid)
+coverage_DF <- data.frame(t(coverage_df))
 
-#cohort level-filtering: editing sites must validate across 50% of samples and have editing efficiency of at least 10% with default settings
-sample_n <- ceiling(ncol(coverage_df) * perc_samples) #where the --percSamples flag comes in
+group_in <- read_tsv(paste0(inDir, group), col_names = T)
+group_df <- as.data.frame(group_in)
+rownames(group_df) <- group_in$sample
+group_df <- select(group_df, -c(sample, bam_path, library))
 
-coverage_df <- coverage_df[which(rowSums(!is.na(coverage_df)) >= sample_n),]
+cov_DF <- merge(coverage_DF, group_df, by = 0)
+grouped_covDFs <- cov_DF %>% group_by(group) %>% group_split()
 
-message( " * ", nrow(coverage_df), " sites are found in at least ", perc_samples * 100, "% of samples (", sample_n, ")" )
+coverageDF <- map(grouped_covDFs, ~{
+  xDF <- .x %>% select(-Row.names, -group)
+  xT <- data.frame(t(xDF))
+  colnames(xT) <- .x$Row.names
+  xFilt <- xT[which(rowSums(!is.na(xT)) >= minSampleN),] #where the --minSamples flag comes in
+  xFilt <- rownames_to_column(xFilt, "ESid")
+  return(xFilt)}) %>% reduce(full_join, by = "ESid")
+
+message( " * ", nrow(coverageDF), " sites are found in at least ", minSampleN, "of each group" )
+
+covThresholdSites <- gsub("\\.",":",coverageDF$ESid)
 
 message(" * reading in ratio file")
-ratio_df <- vroom::vroom(rat_in) %>% column_to_rownames("ESid")
+rat_in <- read_tsv(paste0(inDir, "/merge/", chrom, "_ratio.tsv.gz"), col_names = T)
+rat_in_cleaned <- subset(rat_in, (rat_in$ESid %in% covThresholdSites))
+ratio_df <- as.data.frame(rat_in_cleaned)
+rownames(ratio_df) <- rat_in_cleaned$ESid
+ratio_df <- select(ratio_df, -ESid)
+ratio_DF <- data.frame(t(ratio_df))
 
-message(" * ", nrow(coverage_df), " sites found in total")
+rat_DF <- merge(ratio_DF, group_df, by = 0)
+grouped_ratDFs <- rat_DF %>% group_by(group) %>% group_split()
 
-ratio_df <- ratio_df[which(rowMeans(ratio_df, na.rm = TRUE) >= min_edrate),] #where the --minER flag comes in
+ratioDF <- map(grouped_ratDFs, ~{
+  xDF <- .x %>% select(-Row.names, -group)
+  xT <- data.frame(t(xDF))
+  colnames(xT) <- .x$Row.names
+  xFilt <- xT[which(rowMeans(xT, na.rm = TRUE) >= min_edrate),] #this is where the --minER flag comes in
+  xFilt <- rownames_to_column(xFilt, "ESid")
+  return(xFilt)}) %>% reduce(full_join, by = "ESid")
 
-message( " * ", nrow(ratio_df), " sites have at least ", min_edrate * 100, "% mean editing rate" )
+message( " * ", nrow(ratioDF), " sites have at least ", min_edrate * 100, "% mean editing rate within each group" )
 
-clean_sites <- intersect(row.names(coverage_df), row.names(ratio_df) )
-
-clean_sites <- clean_sites[order(clean_sites) ]
+clean_sites <- intersect(ratioDF$ESid, coverageDF$ESid)
 
 message( " * keeping ", length(clean_sites), " editing sites total" )
 
-coverage_df <- coverage_df[clean_sites,] %>% rownames_to_column("ESid")
+clean_sites <- clean_sites[order(clean_sites)]
 
-ratio_df <- ratio_df[clean_sites,] %>% rownames_to_column("ESid")
+coverageDF <- subset(coverageDF, (coverageDF$ESid %in% clean_sites))
+ratioDF <- subset(ratioDF, (ratioDF$ESid %in% clean_sites))
 
-#coverage_df_final <- arrange(coverage_df_final, ESid)
-#ratio_df_final <- arrange(ratio_df_final, ESid)
+coverageDF$ESid <- gsub("\\.",":",coverageDF$ESid)
+ratioDF$ESid <- gsub("\\.",":",ratioDF$ESid)
 
-write_tsv(coverage_df, file = cov_out)
-write_tsv(ratio_df, file = rat_out)
+write_tsv(coverageDF, file = paste0(inDir, "/filter/", chrom, "_coverage.tsv.gz"))
+write_tsv(ratioDF, file = paste0(inDir, "/filter/", chrom, "_ratio.tsv.gz"))
 
