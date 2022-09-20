@@ -1,0 +1,91 @@
+File path /sc/arion/projects/ad-omics/data/references//hg38_reference/GENCODE/gencode.v38.primary_assembly/gencode.v38.primary_assembly.gene_strand.tsv.gz contains double '/'. This is likely unintended. It can also lead to inconsistent results of the file-matching approach used by Snakemake.
+Job stats:
+job                   count    min threads    max threads
+------------------  -------  -------------  -------------
+all                       1              1              1
+annovar                   1              1              1
+cat_all_sites           290              1              1
+concatenate_cohort        1              1              1
+filter_annovar            1              1              1
+filter_cohort            24              1              1
+jacusa_pileup           290              1              1
+merge_jacusa             24              1              1
+merge_pileup              1              1              1
+parse_jacusa            290              1              1
+parse_known             290              1              1
+parse_pileup            290              1              1
+total                  1503              1              1
+
+[Mon Sep 19 13:39:13 2022]
+Error in rule parse_known:
+    jobid: 47
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUAG766ULB-7610-T_P66/CASE-NEUAG766ULB-7610-T_P66.knownES.filt
+    shell:
+        ml R/4.0.3;Rscript scripts/parse_knownSites.R --input /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUAG766ULB-7610-T_P66/CASE-NEUAG766ULB-7610-T_P66.knownES.out --output /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUAG766ULB-7610-T_P66/CASE-NEUAG766ULB-7610-T_P66.knownES.filt
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule parse_known on cluster (jobid: 47, external: 270192, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.parse_known.47.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 13:39:51 2022]
+Error in rule parse_known:
+    jobid: 1397
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CTRL-NEUPL878MTL-6343-T_P63/CTRL-NEUPL878MTL-6343-T_P63.knownES.filt
+    shell:
+        ml R/4.0.3;Rscript scripts/parse_knownSites.R --input /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CTRL-NEUPL878MTL-6343-T_P63/CTRL-NEUPL878MTL-6343-T_P63.knownES.out --output /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CTRL-NEUPL878MTL-6343-T_P63/CTRL-NEUPL878MTL-6343-T_P63.knownES.filt
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule parse_known on cluster (jobid: 1397, external: 270223, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.parse_known.1397.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 13:40:29 2022]
+Error in rule parse_known:
+    jobid: 542
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUJY536DKF-6466-T_P83/CASE-NEUJY536DKF-6466-T_P83.knownES.filt
+    shell:
+        ml R/4.0.3;Rscript scripts/parse_knownSites.R --input /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUJY536DKF-6466-T_P83/CASE-NEUJY536DKF-6466-T_P83.knownES.out --output /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUJY536DKF-6466-T_P83/CASE-NEUJY536DKF-6466-T_P83.knownES.filt
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule parse_known on cluster (jobid: 542, external: 270220, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.parse_known.542.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 13:41:06 2022]
+Error in rule parse_known:
+    jobid: 1367
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CTRL-NEUMN061ATZ-5789-T_P83/CTRL-NEUMN061ATZ-5789-T_P83.knownES.filt
+    shell:
+        ml R/4.0.3;Rscript scripts/parse_knownSites.R --input /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CTRL-NEUMN061ATZ-5789-T_P83/CTRL-NEUMN061ATZ-5789-T_P83.knownES.out --output /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CTRL-NEUMN061ATZ-5789-T_P83/CTRL-NEUMN061ATZ-5789-T_P83.knownES.filt
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule parse_known on cluster (jobid: 1367, external: 270229, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.parse_known.1367.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 13:42:20 2022]
+Error in rule parse_known:
+    jobid: 302
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUET072VDG-7025-T_P68/CASE-NEUET072VDG-7025-T_P68.knownES.filt
+    shell:
+        ml R/4.0.3;Rscript scripts/parse_knownSites.R --input /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUET072VDG-7025-T_P68/CASE-NEUET072VDG-7025-T_P68.knownES.out --output /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/CASE-NEUET072VDG-7025-T_P68/CASE-NEUET072VDG-7025-T_P68.knownES.filt
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule parse_known on cluster (jobid: 302, external: 270200, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.parse_known.302.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 17:57:35 2022]
+Error in rule merge_pileup:
+    jobid: 1
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_coverage.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_editing.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_annotation.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_dtu.tsv.gz
+    shell:
+        ml R/4.0.3;Rscript scripts/merge_pileup.R --inDir /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/ --anno /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/editing_annotation.txt --missing_sites 0.75 --missing_samples 0.5 
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule merge_pileup on cluster (jobid: 1, external: 328504, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.merge_pileup.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 17:58:55 2022]
+Error in rule merge_pileup:
+    jobid: 1
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_coverage.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_editing.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_annotation.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_dtu.tsv.gz
+    shell:
+        ml R/4.0.3;Rscript scripts/merge_pileup.R --inDir /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/ --anno /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/editing_annotation.txt --missing_sites 0.75 --missing_samples 0.5 
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule merge_pileup on cluster (jobid: 1, external: 328716, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.merge_pileup.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Mon Sep 19 18:00:15 2022]
+Error in rule merge_pileup:
+    jobid: 1
+    output: /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_coverage.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_editing.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_annotation.tsv.gz, /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/all_sites_pileup_dtu.tsv.gz
+    shell:
+        ml R/4.0.3;Rscript scripts/merge_pileup.R --inDir /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/ --anno /sc/arion/projects/ad-omics/winston/bigbrain/editing/AnswerALS/Run6/editing_annotation.txt --missing_sites 0.75 --missing_samples 0.5 
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule merge_pileup on cluster (jobid: 1, external: 328956, jobscript: /sc/arion/projects/ad-omics/winston/editing-pipeline/jacusa-pipeline/.snakemake/tmp.sj40kje3/snakejob.merge_pileup.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+Exiting because a job execution failed. Look above for error message

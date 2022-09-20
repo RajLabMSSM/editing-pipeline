@@ -89,24 +89,29 @@ dtu_df <- map2(joint_sites, sample_ids, ~{
 dtu_df <- cbind(dtu_cols, dtu_df)
 
 ## missingness - drop samples and sites with high % of NA values (exact proportion set in config)
-if( filter_missing_sites > 0 ){
-  keep_samples <- colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]
-  clean_sites <- rowSums( !is.na(coverage_df) ) >= filter_missing_sites * ncol(coverage_df)
-  message(" * keeping ", length(keep_samples), " samples with low missingness")
-  message(" * keeping ", length(clean_sites), " sites with low missingness")
+if( filter_missing_samples > 0 ){
+  
+  ratio_df1filt <- ratio_df[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
+  coverage_df1filt <- coverage_df[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
+  message(" * keeping ", ncol(coverage_df1filt), " samples with low missingness")
+  dtu_df1 <- dtu_df[,1:2]
+  dtu_df2 <- dtu_df[,3:292]
+  dtu_df22 <- dtu_df2[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
+  dtu_df1filt <- cbind(dtu_df1, dtu_df22)
 
-  ratio_df <- ratio_df[clean_sites,keep_samples]
-  coverage_df <- coverage_df[clean_sites,keep_samples]
-  
-  dtu_df1 <- dtu_df[clean_sites,1:2]
-  dtu_dfSamples <- dtu_df[clean_sites,3:292]
-  dtu_dfSamples <- dtu_dfSamples[,keep_samples]
-  dtu_df <- cbind(dtu_df1, dtu_dfSamples)
-  
 }
 
-ratio_df <- rownames_to_column(ratio_df, "ESid")
-coverage_df <- rownames_to_column(coverage_df, "ESid")
+if( filter_missing_sites > 0 ){
+  
+  ratio_df2filt <- ratio_df1filt[rowSums( !is.na(coverage_df1filt) ) >= filter_missing_sites * ncol(coverage_df1filt),]
+  coverage_df2filt <- coverage_df1filt[rowSums( !is.na(coverage_df1filt) ) >= filter_missing_sites * ncol(coverage_df1filt),]
+  message(" * keeping ", nrow(coverage_df2filt), " sites with low missingness")
+  dtu_df2filt <- dtu_df1filt[dtu_df1filt$ESid %in% rownames(coverage_df2filt),]
+
+}
+
+ratio_DF <- rownames_to_column(ratio_df2filt, "ESid")
+coverage_DF <- rownames_to_column(coverage_df2filt, "ESid")
 
 # flip orientation of bases if annotated to negative strand gene
 revcomp <- function(x){
@@ -120,17 +125,16 @@ anno_df <- mutate(anno_df,
 )
 # update ESids on annotation, coverage and ratio matrices
 anno_df <- anno_df %>% mutate(ESid2 = paste0(Chr, ":", Start, ":", Ref, ":", Alt))
+anno_DF <- anno_df[anno_df$ESid %in% coverage_DF$ESid,]
 
-coverage_df$ESid <- anno_df$ESid2
-ratio_df$ESid <- anno_df$ESid2
+coverage_DF$ESid <- anno_DF$ESid2
+ratio_DF$ESid <- anno_DF$ESid2
 
-dtu_df$ESid <- anno_df$ESid2[match(dtu_df$ESid, anno_df$ESid)]
-dtu_df$allele <- paste0(dtu_df$ESid, ":", dtu_df$allele)
-
+dtu_df2filt$ESid <- anno_DF$ESid2[match(dtu_df2filt$ESid, anno_DF$ESid)]
+dtu_df2filt$allele <- paste0(dtu_df2filt$ESid, ":", dtu_df2filt$allele)
 
 # write out
-write_tsv(coverage_df, file = cov_out)
-write_tsv(ratio_df, file = rat_out)
-write_tsv(anno_df, file = anno_out)
-write_tsv(dtu_df, file = dtu_out)
-
+write_tsv(coverage_DF, file = cov_out)
+write_tsv(ratio_DF, file = rat_out)
+write_tsv(anno_DF, file = anno_out)
+write_tsv(dtu_df2filt, file = dtu_out)
