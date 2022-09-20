@@ -1,8 +1,0 @@
-metadata : "test_samples.txt"
-projectDir: "/sc/arion/projects/ad-omics/winston/jacusa_workspace/snakemake_testing/"
-refDir : "/sc/arion/projects/ad-omics/data/references/GRCh38_references/"
-editingRefDir : "/sc/arion/projects/ad-omics/data/references/editing/"
-humandbDir: "/sc/arion/projects/ad-omics/data/references/editing/humandb/"
-# play with coverage settings for merging
-min_coverage: 0.1 # min proportion of cohort that site should be found in 
-min_edit_rate: 0.01 # min mean editing rate
