@@ -94,8 +94,11 @@ if( filter_missing_samples > 0 ){
   ratio_df1filt <- ratio_df[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
   coverage_df1filt <- coverage_df[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
   message(" * keeping ", ncol(coverage_df1filt), " samples with low missingness")
+  dtu_df_col<-as.integer(ncol(dtu_df))
+  message("number of cols in dtu_df is:", dtu_df_col)
   dtu_df1 <- dtu_df[,1:2]
-  dtu_df2 <- dtu_df[,3:292]
+  dtu_df_col<-(ncol(dtu_df))
+  dtu_df2 <- dtu_df[,3:dtu_df_col]
   dtu_df22 <- dtu_df2[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
   dtu_df1filt <- cbind(dtu_df1, dtu_df22)
 
