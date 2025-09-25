@@ -10,8 +10,8 @@ library(tidyverse)
 
 option_list <- list(make_option(c('--inDir'), help = 'The path to the Jacusa output directory', default = '.'),
                     make_option(c('--anno'), help = 'The site annotation following annovar', default = ''),
-                    make_option(c('--missing_samples'), help = "proportion of samples with coverage to enforce", default = 0),
-                    make_option(c('--missing_sites'), help = "proportion of sites with coverage to enforce", default = 0) )
+                    make_option(c('--missing_samples'), help = "proportion of samples with coverage to enforce", default = 0.2),
+                    make_option(c('--missing_sites'), help = "proportion of sites with coverage to enforce", default = 0.2) )
 
 option.parser <- OptionParser(option_list = option_list)
 opt <- parse_args(option.parser)
@@ -89,28 +89,31 @@ dtu_df <- map2(joint_sites, sample_ids, ~{
 dtu_df <- cbind(dtu_cols, dtu_df)
 
 ## missingness - drop samples and sites with high % of NA values (exact proportion set in config)
-if( filter_missing_samples > 0 ){
-  
-  ratio_df1filt <- ratio_df[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
-  coverage_df1filt <- coverage_df[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
-  message(" * keeping ", ncol(coverage_df1filt), " samples with low missingness")
-  dtu_df_col<-as.integer(ncol(dtu_df))
-  message("number of cols in dtu_df is:", dtu_df_col)
-  dtu_df1 <- dtu_df[,1:2]
-  dtu_df_col<-(ncol(dtu_df))
-  dtu_df2 <- dtu_df[,3:dtu_df_col]
-  dtu_df22 <- dtu_df2[,colnames(coverage_df)[colSums(!is.na(coverage_df)) >= (filter_missing_samples * nrow(coverage_df))]]
-  dtu_df1filt <- cbind(dtu_df1, dtu_df22)
-
-}
+##filter_missing_samples = 0.2 , means one sample (column) must have non-NA coverage for at least 20% of all editing sites (rows)
+##filter_missing_sites = 0.2 , means editing sites (rows) must have non-NA coverage in at least 20% of all samples (columns)
 
 if( filter_missing_sites > 0 ){
   
-  ratio_df2filt <- ratio_df1filt[rowSums( !is.na(coverage_df1filt) ) >= filter_missing_sites * ncol(coverage_df1filt),]
-  coverage_df2filt <- coverage_df1filt[rowSums( !is.na(coverage_df1filt) ) >= filter_missing_sites * ncol(coverage_df1filt),]
-  message(" * keeping ", nrow(coverage_df2filt), " sites with low missingness")
-  dtu_df2filt <- dtu_df1filt[dtu_df1filt$ESid %in% rownames(coverage_df2filt),]
+  ratio_df1filt <- ratio_df[rowSums( !is.na(coverage_df) ) >= filter_missing_sites * ncol(coverage_df),]
+  coverage_df1filt <- coverage_df[rowSums( !is.na(coverage_df) ) >= filter_missing_sites * ncol(coverage_df),]
+  message(" * keeping ", nrow(coverage_df1filt), " sites with low missingness")
+  dtu_df1filt <- dtu_df[dtu_df$ESid %in% rownames(coverage_df1filt),]
+  
+}
 
+if( filter_missing_samples > 0 ){
+  
+  ratio_df2filt <- ratio_df1filt[,colnames(coverage_df1filt)[colSums(!is.na(coverage_df1filt)) >= (filter_missing_samples * nrow(coverage_df1filt))]]
+  coverage_df2filt <- coverage_df1filt[,colnames(coverage_df1filt)[colSums(!is.na(coverage_df1filt)) >= (filter_missing_samples * nrow(coverage_df1filt))]]
+  message(" * keeping ", ncol(coverage_df2filt), " samples with low missingness")
+  dtu_df_col<-as.integer(ncol(dtu_df1filt))
+  message("number of cols in dtu_df is:", dtu_df_col)
+  dtu_df1 <- dtu_df1filt[,1:2]
+  dtu_df_col<-(ncol(dtu_df1filt))
+  dtu_df2 <- dtu_df1filt[,3:dtu_df_col]
+  dtu_df22 <- dtu_df2[,colnames(coverage_df1filt)[colSums(!is.na(coverage_df1filt)) >= (filter_missing_samples * nrow(coverage_df1filt))]]
+  dtu_df2filt <- cbind(dtu_df1, dtu_df22)
+  
 }
 
 ratio_DF <- rownames_to_column(ratio_df2filt, "ESid")
@@ -122,22 +125,31 @@ revcomp <- function(x){
 }
 message(" * flipping orientations" )
 
-anno_df <- mutate(anno_df,
-                  Ref = ifelse(!is.na(strand) & strand == "-", revcomp(Ref), Ref ),
-                  Alt = ifelse(!is.na(strand) & strand == "-", revcomp(Alt), Alt )
-)
-# update ESids on annotation, coverage and ratio matrices
-anno_df <- anno_df %>% mutate(ESid2 = paste0(Chr, ":", Start, ":", Ref, ":", Alt))
+anno_df <- anno_df %>%
+  mutate(Ref = ifelse(!is.na(strand) & strand == "-", revcomp(Ref), Ref),
+         Alt = ifelse(!is.na(strand) & strand == "-", revcomp(Alt), Alt)) %>%
+  mutate(ESid2 = paste0(Chr, ":", Start, ":", Ref, ":", Alt)) %>%
+  select("ESid","ESid2","Chr","Start","End","strand","Ref","Alt",
+         "Func.refGene","Gene.refGene","ExonicFunc.refGene",
+         "AAChange.refGene","rmsk","REDIportal_info","ensembl_id")
+
 anno_DF <- anno_df[anno_df$ESid %in% coverage_DF$ESid,]
 
+# update ESids on annotation, coverage and ratio matrices
 coverage_DF$ESid <- anno_DF$ESid2
 ratio_DF$ESid <- anno_DF$ESid2
 
 dtu_df2filt$ESid <- anno_DF$ESid2[match(dtu_df2filt$ESid, anno_DF$ESid)]
 dtu_df2filt$allele <- paste0(dtu_df2filt$ESid, ":", dtu_df2filt$allele)
 
+# dropping old ESid column and replacing it with strand flipped version
+annoDF <- anno_DF %>%
+  select(-ESid) %>%
+  rename("ESid" = "ESid2")
+
 # write out
 write_tsv(coverage_DF, file = cov_out)
 write_tsv(ratio_DF, file = rat_out)
-write_tsv(anno_DF, file = anno_out)
+write_tsv(annoDF, file = anno_out)
 write_tsv(dtu_df2filt, file = dtu_out)
+

@@ -49,12 +49,12 @@ df <- df %>%
 message(" * ", nrow(df), " sites loaded")
 # pivot
 df_long <- df %>% pivot_longer(!c(chrpos, ref, score, ref_cov, total_cov), names_to = "alt", values_to = "alt_cov") 
-# remove rows where ref & alt are the same
-# rows where alt_cov=0 are kept here but considered by missingness filter later on
-df_long <- filter(df_long, ref != alt)
-#sort first and for multiallelic sites only keep site with top alt coverage
+# remove rows where ref & alt are the same, remove alt with 0 coverage
+df_long <- filter(df_long, ref != alt & alt_cov > 0)
+# sort and remove multiallelic sites
 df_long2 <- df_long[order(df_long$chrpos, -abs(df_long$"alt_cov") ), ]
-df_long3 <- df_long2[!duplicated(df_long2$chrpos), ]
+multiallelic <- df_long$chrpos[duplicated(df_long$chrpos)]
+df_long3 <- df_long2[!df_long2$chrpos %in% multiallelic,]
 
 df_filt <- 
     df_long3 %>%
